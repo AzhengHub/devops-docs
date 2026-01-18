@@ -2,13 +2,13 @@
 title: "Elasticsearch"
 ---
 
-# Elasticsearch 概述
+## Elasticsearch 概述
 
 https://www.elastic.co/cn/
 
 Elasticsearch 基于 JAVA 开发，是一个高度可扩展的开源全文搜索和分析引擎，它可实现数据的实时全文搜索、支持分布式可实现高可用、提供API接口，可以处理大规模的日志数据，比如nginx、tomcat、系统日志等功能。
 
-## 特点
+### 特点
 
 - 实时搜索、实时分析
 
@@ -22,7 +22,7 @@ Elasticsearch 基于 JAVA 开发，是一个高度可扩展的开源全文搜索
 
 
 
-## 相关端口
+### 相关端口
 
 ```sh
 TCP/9200 # ES节点和外部通讯使用 (与Logstash和Beats)
@@ -37,13 +37,13 @@ TCP/9300 # ES节点之间通讯使用 (ES集群节点通信)
 
 
 
-## Master & Slave节点
+### Master & Slave节点
 
 
 
-# Elasticsearch 部署
+## Elasticsearch 部署
 
-## 容器单机部署
+### 容器单机部署
 
 **参考文档：**
 
@@ -170,7 +170,7 @@ Enter host password for user 'elastic': #输入之前重置的密码
 
 
 
-## docker-compose.yml
+### docker-compose.yml
 
 elasticsearch + kibana
 
@@ -224,9 +224,9 @@ networks:
 
 
 
-# Elasticsearch 配置文件
+## Elasticsearch 配置文件
 
-## elasticsearch.yml
+### elasticsearch.yml
 
 - 集群相关配置文件
 - /etc/elasticsearch/elasticsearch.yml
@@ -306,7 +306,7 @@ action.destructive_requires_name: true #true表示删除es数据时必须要指�
 
 
 
-## jvm.options
+### jvm.options
 
 - jvm配置
 
@@ -321,35 +321,35 @@ action.destructive_requires_name: true #true表示删除es数据时必须要指�
 
 
 
-## /var/log/elasticsearch
+### /var/log/elasticsearch
 
 - 日志存放目录
 
 
 
-# Elasticsearch 索引
+## Elasticsearch 索引
 
 在 Elasticsearch (ES) 中，索引是存储、管理和查询数据的核心概念。每个索引包含一个或多个文档，这些文档是数据的基本单元。
 
-## 索引名称
+### 索引名称
 
 每个索引有一个唯一的名称，用来引用和访问数据。在执行搜索、删除、更新等操作时，需要通过索引名称来定位。
 
-## 索引分片（Shard）
+### 索引分片（Shard）
 
 索引通常分为多个分片，分片是数据的存储单位。每个分片可以分布在不同的节点上，便于负载均衡和并行搜索。
 
-### 主分片
+#### 主分片
 
 - 即主索引数据，每个主分片会在集群中的每个节点随机分散存放；
 - 如果主分片损坏，则副本分片上位替代主分片，**副本分片不可能和主分片存放在同一个服务器，一定是跨服务器保存**，否则主服务器一旦损坏则数据就会丢失。
 
-### 副本分片
+#### 副本分片
 
 - 即主索引数据的备份，每个副本分片会在集群中的每个节点随机分散存放
 - 如果副本分片丢失，而主分片存在，则会在其他服务器上重新创建副本分片(不会和主分片一起存放)
 
-### 分片运行状态
+#### 分片运行状态
 
 https://www.elastic.co/guide/cn/elasticsearch/guide/current/_cluster_health.html
 
@@ -362,228 +362,6 @@ https://www.elastic.co/guide/cn/elasticsearch/guide/current/_cluster_health.html
 - **`red`**：至少一个主分片（以及它的全部副本）都在缺失中。这意味着你在**缺少数据**：搜索只能返回部分数据，而分配到这个分片上的写入请求会返回一个异常。
 
 
-
-## 索引详解
-
-### 1. **索引的概念**
-
-Elasticsearch 中的“索引”类似于传统数据库中的“表”，但有一些重要的区别。索引是具有类似结构的数据的集合，它包含了多个文档（`document`），并且每个文档都包含字段（`fields`）。
-
-- **索引（Index）**: 在 ES 中，索引不仅仅是指单个对象，它指的是整个存储的数据集合。一个索引可以存储一个特定类型的文档数据，例如用户数据、订单数据等。每个索引都有一个唯一的名字来标识它。
-
-- **文档（Document）**: 一个文档是一条具体的数据记录，类似于关系数据库中的一行数据。文档是以 JSON 格式存储的，每个文档都可以有不同的结构和字段集合。
-
-- **字段（Field）**: 文档中的数据以字段-值对的形式存储。字段类似于数据库中的列，每个字段都有一个类型（如文本、数字、日期等）。
-
-### 2. **索引的结构**
-
-Elasticsearch 中的索引包含以下几部分的结构：
-
-- **名称**: 每个索引有一个唯一的名称，用来引用和访问数据。在执行搜索、删除、更新等操作时，需要通过索引名称来定位。
-
-- **分片（Shard）**: 索引通常分为多个分片，分片是数据的存储单位。每个分片可以分布在不同的节点上，便于负载均衡和并行搜索。
-
-- **副本（Replica）**: 为了保证高可用性，ES 允许为每个分片创建副本。副本分片可以在其他节点上存储，这样即使某个节点宕机，数据也不会丢失。
-
-### 3. **创建索引**
-
-你可以通过以下命令创建一个新的索引：
-
-```json
-PUT /my_index
-{
-  "settings": {
-    "number_of_shards": 3,
-    "number_of_replicas": 1
-  },
-  "mappings": {
-    "properties": {
-      "name": { "type": "text" },
-      "age": { "type": "integer" }
-    }
-  }
-}
-```
-
-在这个例子中：
-
-- `number_of_shards`: 定义索引的主分片数。分片的数量不能在创建索引之后更改。
-- `number_of_replicas`: 定义每个主分片的副本数量。
-- `mappings`: 定义索引中字段的类型和结构。
-
-### 4. **索引的映射（Mapping）**
-
-映射（Mapping）是用来定义文档中各个字段的类型（如 `text`、`keyword`、`integer`、`date` 等）及其行为规则的。它决定了 ES 如何对文档字段进行索引和存储。
-
-#### 映射类型
-
-- **Text**: 用于全文搜索的文本字段。文本会进行分词处理。
-- **Keyword**: 用于精确匹配的字段（不进行分词）。适合存储诸如标识符、标签、分类等。
-- **Numeric**: 用于存储数字类型的字段，如 `integer`、`long`、`float` 等。
-- **Date**: 用于存储日期的字段，支持多种日期格式。
-- **Boolean**: 用于存储布尔值（`true` / `false`）。
-
-示例：
-
-```json
-PUT /my_index
-{
-  "mappings": {
-    "properties": {
-      "name": { "type": "text" },
-      "created_at": { "type": "date" },
-      "status": { "type": "keyword" }
-    }
-  }
-}
-```
-
-### 5. **索引操作**
-
-- **创建索引**: 使用 `PUT` 请求创建新的索引。
-
-  ```json
-  PUT /my_new_index
-  ```
-
-- **删除索引**: 使用 `DELETE` 请求删除指定的索引。
-
-  ```json
-  DELETE /my_new_index
-  ```
-
-- **索引文档**: 使用 `POST` 或 `PUT` 请求向索引添加文档。`POST` 请求可以自动生成文档 ID，而 `PUT` 请求需要指定文档 ID。
-
-  ```json
-  POST /my_index/_doc
-  {
-    "name": "John",
-    "age": 30
-  }
-  ```
-
-- **更新索引**: 更新现有索引的文档。
-
-  ```json
-  POST /my_index/_update/1
-  {
-    "doc": {
-      "age": 31
-    }
-  }
-  ```
-
-- **查询索引**: 使用 `_search` API 对索引进行搜索。
-
-  ```json
-  GET /my_index/_search
-  {
-    "query": {
-      "match": {
-        "name": "John"
-      }
-    }
-  }
-  ```
-
-### 6. **索引的优化设置**
-
-为了提高索引的性能，Elasticsearch 提供了许多优化选项。
-
-- **分片大小**: 如果分片太大，可能会影响查询性能。如果分片太小，可能会导致大量的小分片占用系统资源。通常建议单个分片的大小控制在 10GB 到 50GB 之间。
-
-- **索引刷新间隔**: 默认情况下，Elasticsearch 每隔 1 秒刷新一次索引，这意味着会创建新的段以供搜索。如果你不需要实时搜索，增加刷新间隔可以提高写入性能。
-
-  ```json
-  PUT /my_index/_settings
-  {
-    "index": {
-      "refresh_interval": "30s"
-    }
-  }
-  ```
-
-### 7. **动态映射**
-
-Elasticsearch 提供了动态映射功能，它可以自动检测新字段并为其分配默认类型。例如，如果你添加一个包含新字段的文档，Elasticsearch 会自动检测字段并将其映射为合适的类型。
-
-```json
-POST /my_index/_doc
-{
-  "new_field": "This is a new field"
-}
-```
-
-Elasticsearch 会将 `new_field` 自动映射为 `text` 类型。
-
-### 8. **索引别名（Alias）**
-
-索引别名允许你为一个或多个索引创建别名，从而简化索引的管理和查询。你可以通过别名执行搜索、更新等操作，而不必关注底层实际的索引名称。这在需要进行索引切换时非常有用。
-
-```json
-POST /_aliases
-{
-  "actions": [
-    { "add": { "index": "my_index", "alias": "my_alias" } }
-  ]
-}
-```
-
-### 9. **关闭与打开索引**
-
-你可以在不删除数据的情况下关闭索引，以便释放系统资源：
-
-- **关闭索引**:
-
-  ```json
-  POST /my_index/_close
-  ```
-
-- **打开索引**:
-
-  ```json
-  POST /my_index/_open
-  ```
-
-### 10. **索引生命周期管理（ILM）**
-
-索引生命周期管理 (Index Lifecycle Management, ILM) 是一种自动管理索引生命周期的方式。它允许你根据索引的年龄或其他条件自动执行各种操作，如转移到冷存储、删除索引等。
-
-总结来说，Elasticsearch 的索引是数据管理的核心，涉及分片、副本、映射等多种概念和操作。通过灵活配置索引，你可以优化搜索和存储效率，并实现多种复杂的查询和数据管理功能。
-
-## python 创建索引
-
-```python
-from elasticsearch import Elasticsearch
-
-# 创建 Elasticsearch 客户端
-es = Elasticsearch("http://172.16.0.123:9200")
-
-# 定义索引名称和设置
-index_name = "test_index"
-index_settings = {
-    "settings": {
-        "number_of_shards": 1,
-        "number_of_replicas": 0
-    },
-    "mappings": {
-        "properties": {
-            "your_field_name": {
-                "type": "text"
-            }
-        }
-    }
-}
-
-# 创建索引
-es.indices.create(index=index_name, body=index_settings)
-
-print(f"索引 {index_name} 创建成功！")
-```
-
-
-
-# ---
 
 
 
@@ -976,7 +754,7 @@ elastic             	https://helm.elastic.co
 
 
 # 检测es集群是否健康
-# curl -XGET --fail 'elasticsearch-master:9200/_cluster/health?wait_for_status=green&timeout=1s'
+# curl -XGET --fail '127.0.0.1:9200/_cluster/health?wait_for_status=green&timeout=1s'
 # curl -XGET --fail '10.107.84.186:9200/_cluster/health?wait_for_status=green&timeout=1s' | jq .
 {
   "cluster_name": "elasticsearch",
@@ -1087,36 +865,21 @@ docker run -d -p 9100:9100 mobz/elasticsearch-head:5
 ```
 
 
+## Es API
 
+- Elasticsearch 提供了RESTful风格的API，此API可以实现对es集群的CRUD（Create, Read, Update, Delete)
+- 参考文档：https://www.elastic.co/guide/en/elasticsearch/reference/current/docs.html
 
+```sh
+# 打印所有索引，按存储大小降序排序
+curl -s "127.0.0.1:9200/_cat/indices?v&s=store.size:desc"
 
+# 打印节点信息
+curl -s "127.0.0.1:9200/_cat/nodes?v&h=ip,name,version,node.role,master,heap.percent,cpu,load_1m"
 
-
-# Elasticsearch APIs
-
-https://www.elastic.co/guide/en/elasticsearch/reference/current/docs.html
-
-- Elasticsearch 提供了RESTful风格的API；
-- 此API可以实现对es集群的CRUD（Create, Read, Update, Delete)
-
-
-
-## RESTful API Explain
-
-**`curl  -X<VERB> '<PROTOCOL>://<HOST>:<PORT>/<PATH>?<QUERY_STRING>' -d '<BODY>'`**
-
-- `<VERB>` GET，POST，PUT，DELETE
-  - POST 一般用于修改
-  - PUT 一般用于上传
-- `<PATH>` /index_name/type/Document_ID/
-  - 特殊PATH：/\_cat, /\_search, /_cluster
-- `<BODY>` json格式的请求主体；
-
-
-
-## Elasticsearch API xample
-
-- Elasticsearch 常用 API 汇总
+# 打印所有以tor_开头的索引，按索引名称排序
+curl -s "172.16.30.111:9200/_cat/indices/tor_*?v&s=index"
+```
 
 ### GET
 
@@ -1126,41 +889,50 @@ https://www.elastic.co/guide/en/elasticsearch/reference/current/docs.html
 
 ```sh
 # 打印支持的指令，pretty表示以易读格式输出=true可省略；
-curl 'http://elasticsearch-master:9200/_cat?pretty=true'
+curl 'http://127.0.0.1:9200/_cat?pretty=true'
 
 # 健康状态信息
-curl 'http://elasticsearch-master:9200/_cat/health?pretty'
+curl 'http://127.0.0.1:9200/_cat/health?pretty'
 
 # 每个字段的含义
-curl 'http://elasticsearch-master:9200/_cat/health?help'
+curl 'http://127.0.0.1:9200/_cat/health?help'
 
 # 群集节点信息
-curl 'http://elasticsearch-master:9200/_cat/nodes?pretty'
+curl 'http://127.0.0.1:9200/_cat/nodes?pretty'
 
 # 主节点信息
-curl 'http://elasticsearch-master:9200/_cat/master?pretty'
+curl 'http://127.0.0.1:9200/_cat/master?pretty'
 
 # 全部索引信息
-curl 'http://elasticsearch-master:9200/_cat/indices?pretty'
+curl 'http://127.0.0.1:9200/_cat/indices?pretty'
 
 # 某个索引信息
-curl 'http://elasticsearch-master:9200/_cat/indices/logstash-2022.10.19?pretty'
+curl 'http://127.0.0.1:9200/_cat/indices/logstash-2022.10.19?pretty'
 ```
 
 #### /_cluster
 
 ```sh
 # 集群健康状态信息
-curl 'http://elasticsearch-master:9200/_cluster/health?pretty'
+curl 'http://127.0.0.1:9200/_cluster/health?pretty'
 
 
 # 集群详细信息；
-curl 'http://elasticsearch-master:9200/_cluster/stats?pretty'
+curl 'http://127.0.0.1:9200/_cluster/stats?pretty'
 ```
 
 #### /\_search
 
 
+#### /_search
+
+```sh
+# 搜索所有索引
+curl 'http://127.0.0.1:9200/_search?pretty'
+
+# 搜索指定索引
+curl 'http://127.0.0.1:9200/my-index/_search?pretty'
+```
 
 ### PUT
 
@@ -1168,12 +940,12 @@ curl 'http://elasticsearch-master:9200/_cluster/stats?pretty'
 # 创建索引文档
 curl \
 -H 'content-type: application/json' \
--XPUT 'http://elasticsearch-master:9200/my-index/_doc/123' \
+-XPUT 'http://127.0.0.1:9200/my-index/_doc/123' \
 -d '{ "key1": "value1", "key2": "value2" }'
 
 
 # 验证
-# curl 'http://elasticsearch-master:9200/my-index/_doc/123?pretty'
+# curl 'http://127.0.0.1:9200/my-index/_doc/123?pretty'
 {
   "_index" : "my-index",
   "_type" : "_doc",
@@ -1190,7 +962,7 @@ curl \
 
 
 # 搜索的方式
-# curl 'http://elasticsearch-master:9200/my-index/_search?q=value1&pretty'
+# curl 'http://127.0.0.1:9200/my-index/_search?q=value1&pretty'
 {
   "took" : 4,
   "timed_out" : false,
@@ -1224,7 +996,7 @@ curl \
 
 
 
-# Elasticsearch security
+## Elasticsearch security
 
 启用 Elasticsearch 安全功能：
 
@@ -1232,7 +1004,7 @@ curl \
 
 **！！！elasticsearch-7.15.0版本有BUG，开启安全认证就开启不了elasticsearch服务，而取消安全认证开启服务就执行不了/usr/share/elasticsearch/bin/elasticsearch-setup-passwords interactive设置不了密码**
 
-### 多集群节点：
+#### 多集群节点：
 
 ##### 开启安全认证功能
 
@@ -1252,7 +1024,7 @@ echo "xpack.security.enabled: true" >> /etc/elasticsearch/elasticsearch.yml
 ...
 ```
 
-### 单集群节点：
+#### 单集群节点：
 
 ```bash
 #如果您的集群只有一个节点，请discovery.type在 $ES_PATH_CONF/elasticsearch.yml文件中添加设置并将值设置为single-node. 此设置可确保您的节点不会无意中连接到可能在您的网络上运行的其他集群。

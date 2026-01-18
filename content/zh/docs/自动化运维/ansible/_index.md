@@ -2,7 +2,7 @@
 title: "Ansible"
 ---
 
-# Ansible 概述
+## Ansible 概述
 
 - 模块化：调用特定的模块执行特定的任务，并且支持自定义模块 并且可以使用任何编程语言编写模块
 - 基于python语言开发
@@ -11,8 +11,6 @@ title: "Ansible"
 - 幂等性：一个任务执行1遍和执行n遍效果一样，不因重复执行带来意外情况
 - 支持playbook编排任务，YAML格式，编排任务，支持丰富的数据结构
 - 较强大的多层解决方案 role
-
-
 
 **参考文档**
 
@@ -26,38 +24,40 @@ title: "Ansible"
 - https://github.com/ansible/ansible-examples
 
 
+## Ansible 安装
 
+### yum/apt 安装
 
-
-# Ansible 安装
-
-## yum 安装
-
-- 生产中主流安装方式（自epel源）
+- 生产中主流安装方式
 
 ```bash
+# CentOS 从 epel 源安装
 yum -y install ansible
+
+# Ubuntu
+apt -y install ansible
 ```
 
-## apt 安装
-
-```
-xxx
-```
-
-## 编译安装
+### 编译安装
 
 ```sh
+# 安装依赖
 yum -y install python-jinja2 PyYAML python-paramiko python-babel python-crypto
+
+# 下载 ansible 源码
 tar xf ansible-1.5.4.tar.gz
+
+# 编译安装
 cd ansible-1.5.4
 python setup.py build
 python setup.py install
+
+# 创建配置目录
 mkdir /etc/ansible
 cp -r examples/* /etc/ansible
 ```
 
-## git 安装
+### git 安装
 
 ```sh
 git clone git://github.com/ansible/ansible.git --recursive
@@ -65,7 +65,7 @@ cd ./ansible
 source ./hacking/env-setup
 ```
 
-## 验证安装
+### 验证安装
 
 ```sh
 # ansible --version
@@ -79,103 +79,158 @@ ansible 2.9.18
 
 
 
+## 配置 SSH 免密登录
+Ansible 默认依赖 SSH 协议，因此需要将管理机的公钥分发到所有节点上。
+
+**生成密钥 (如果没有):**
+```sh
+ssh-keygen -t rsa
+# 一路回车即可
+```
+- **.ssh/id_rsa** ：私钥文件，用于身份验证，**严禁泄露**。
+- **.ssh/id_rsa.pub** ：公钥文件，用于分发到所有节点。
+
+**执行以下脚本批量推送公钥:**
+```sh {filename="copy-ssh-key.sh"}
+# /bin/bash
+# 替换为实际的 IP 列表
+IPS="
+10.0.0.1
+10.0.0.2
+10.0.0.3
+"
+
+for ip in $IPS; do
+    echo "Copying key to $ip..."
+    ssh-copy-id -o StrictHostKeyChecking=no root@$ip
+done
+```
 
 
-# Ansible 相关文件
+#### 测试连接
+- 定义简单的主机清单文件
+```ini {filename="/etc/ansible/hosts"}
+[servers]
+10.0.0.1
+10.0.0.2
+10.0.0.3
+```
+
+- 测试连接
+```bash
+ansible all -m ping
+```
+
+如果连接成功，将返回 `pong` 字样。
 
 
 
-## /etc/ansible/ansible.cfg
+## Ansible 相关文件
+
+### 主配置文件 
 
 - 主配置文件，配置ansible工作特性，但大多数配置无需修改
 
-**配置文件优先级**
-
+配置文件优先级：
 - 主配置文件中的配置可被其他更高优先级的配置所替代
 - $ANSIBLE_CONFIG环境变量 **>** 检查运行ansible命令的目录中的ansible.cfg文件  **>** 用户家目录的.ansible.cfg文件 **>** /etc/ansible/ansible.cfg文件
 
-```sh
+```sh {filename="/etc/ansible/ansible.cfg"}
 [defaults]
-#inventory     = /etc/ansible/hosts # 主机列表配置文件
-
-#library = /usr/share/my_modules/ # 库文件存放目录
-
-#remote_tmp = $HOME/.ansible/tmp # 临时py命令文件存放在远程主机目录
-
-#local_tmp     = $HOME/.ansible/tmp # 本机的临时命令执行目录
-
-#forks         = 5   # 默认并发数
-
-#sudo_user     = root # 默认sudo 用户
-
-#ask_sudo_pass = True # 每次执行ansible命令是否询问ssh密码
-
-#ask_pass     = True   
-
-#remote_port   = 22 # 默认远程链接主机的端口号（还可以在主机清单文件中对某主机单独指定端口）
-
-#module_name = command   # 默认模块，可以修改为shell模块
-
-
+inventory     = /etc/ansible/hosts # 主机清单文件位置
+library = /usr/share/my_modules/ # 库文件存放目录
+remote_tmp = $HOME/.ansible/tmp # 临时py命令文件存放在远程主机目录
+local_tmp     = $HOME/.ansible/tmp # 本机的临时命令执行目录
+forks         = 5   # 默认并发数
+sudo_user     = root # 默认sudo 用户
+ask_sudo_pass = True # 每次执行ansible命令是否询问ssh密码
+ask_pass     = True   # 每次执行ansible命令是否询问ssh密码
+remote_port   = 22 # 默认远程链接主机的端口号（还可以在主机清单文件中对某主机单独指定端口）
+module_name = command   # 默认模块，可以修改为shell模块
+deprecation_warnings = False # 禁用弃用警告
 host_key_checking = False # 检查对应服务器的host_key，建议取消注释，否则每台主机都需要按yes验证，不启用此行的话修改/etc/ssh/ssh_config文件中的StrictHostKeyChecking no也可以，效果一样，建议修改的值（ansible2.9.18已经默认取消注释，所以无需修改）
+log_path=/var/log/ansible.log # 日志文件，建议启用
+```
 
-log_path=/var/log/ansible.log #日志文件，建议启用
+### 手动生成主配置文件 
+- 有些场景下，可能需要手动生成主配置文件，可通过以下方式生成：
+```sh
+# 确定 ansible 配置文件路径
+ansible --version
+...
+  config file = /etc/ansible/ansible.cfg
+...
+
+# 创建配置目录
+mkdir -p /etc/ansible/
+
+# 生成默认配置文件
+cat > /etc/ansible/ansible.cfg << EOF
+[defaults]
+inventory     = /etc/ansible/hosts
+library = /usr/share/my_modules/
+remote_tmp = $HOME/.ansible/tmp
+local_tmp     = $HOME/.ansible/tmp
+forks         = 5
+sudo_user     = root
+ask_sudo_pass = True
+ask_pass     = True
+remote_port   = 22
+module_name = shell
+deprecation_warnings = Fals
+host_key_checking = False
+log_path=/var/log/ansible.log
+EOF
 ```
 
 
 
-
-
-## /etc/ansible/hosts
+### 主机清单配置文件 
 
 - 主机清单配置文件，遵循INI文件风格，中括号中的字符为组名。
 - 可以将同一个主机同时归并到多个不同的组中 
 - 此外，当如若目标主机使用了非默认的SSH端口，还可以在主机名称之后使用冒号加端口号来标明
 - 如果主机名称遵循相似的命名模式，还可以使用列表的方式标识各主机
 
-### 单主机范例
+```ini
+# 定义 servers 组
+[servers]
+192.168.100.2:3333 # 指定ssh的端口号（如若目标主机使用了非默认的SSH端口，要在主机名称之后使用冒号加端口号来标明）
+10.0.0.1
+10.0.0.2
+# 特殊情况：如果这台机器的登录名和密码与普通用户不同，需要单独配置
+10.0.0.3 ansible_ssh_pass='这里填这台机器的特殊密码' # 如果 sudo 密码也不一样，还需要追加 ansible_become_pass='...'
+10.0.0.[100:200] # 指定范围，代表10.0.0.100~10.0.0.200
 
-```sh
-# 指定主机名
-blue.example.com
 
-# 指定 IP
-192.168.100.1
 
-# 指定ssh的端口号（如若目标主机使用了非默认的SSH端口，要在主机名称之后使用冒号加端口号来标明）
-192.168.100.2:3333
+# 未配置 ssh 免密登录的情况下管理主机
+[servers:vars]
+ansible_user=普通用户登录名
+ansible_ssh_pass=普通用户的SS密码
+ansible_become_pass=指定 sudo 时的密码（通常同上）
+
+
+[es_masters]
+172.16.30.111 node_name=node-master0 # node_name 表示节点名称，可在playbook中引用
+172.16.30.113 node_name=node-master1
+172.16.30.112 node_name=node-master2
+
+[es_data]
+172.16.30.37  node_name=node-6
+172.16.30.78  node_name=node-8
+172.16.30.41  node_name=node-2
+172.16.30.61  node_name=node-3
+172.16.30.53  node_name=node-5
+172.16.30.21  node_name=node-1
+172.16.30.35  node_name=node-4
+172.16.30.54  node_name=node-7
+
+# 定义一个父组，包含所有 ES 节点，方便统一下发命令
+[es_all:children]
+es_masters
+es_data
 ```
-
-### 主机组范例
-
-- **可以将同一个主机同时归并到多个不同的组中**
-- 中括号开头为分组名称
-
-```bash
-[webservers]
-alpha.example.org
-192.168.1.100
-
-# 指定范围
-[websrvs]
-www[1:100].example.com
-
-# 指定范围，a到f，abcdef
-[websrvs]
-www[a:f].example.com
-
-# 指定范围，代表10.0.0.1~10.0.0.100
-[appsrvs]
-10.0.0.[1:100]
-```
-
-
-
-
-
-## /etc/ansible/roles
-
-- 存放角色的目录
 
 
 
@@ -197,7 +252,15 @@ www[a:f].example.com
 /usr/bin/ansible-galaxy # 下载/上传优秀代码或Roles模块的官网平台
 ```
 
+## Ansible 命令行
 
+```sh
+# 让命令输出成为一行一行的
+ansible servers -m ping -o
+
+# 在特定主机上执行任务
+ansible 172.16.30.112,172.16.30.113 -m ...
+```
 
 ## ansible
 
@@ -317,8 +380,6 @@ ansible 'all:!10.0.0.8' -a reboot
 # 在kube开头组名和etcd组中除了10.0.0.101主机以外全部重启
 ansible 'kube*:etcd:!10.0.0.101' -a reboot
 
-
-
 # 以wang用户执行ping存活检测
 ansible all -m ping -u wang  -k
 
@@ -386,7 +447,6 @@ ansible all -m command  -u wang -a 'ls /root' -b --become-user=root -k -K
 #diff_remove = red
 #diff_lines = cyan
 ````
-
 
 
 ## ansible-doc
@@ -3546,4 +3606,49 @@ my.cnf mysql-5.6.46-linux-glibc2.12-x86_64.tar.gz secure_mysql.sh
         hosts: all
         serial: "20%"   #每次只同时处理20%的主机
       ```
+
+
+
+## playbook 示例
+Ansible 设置密码需要使用加密后的哈希值，不能直接写明文。在管理机上运行以下 Python 命令生成哈希（将 YourNewRootPassword 替换为想要的统一密码）：
+```sh
+# 生成 SHA-512 哈希
+python3 -c 'import crypt; print(crypt.crypt("YourNewRootPassword", crypt.mksalt(crypt.METHOD_SHA512)))'
+```
+- 会得到一串类似 $6$randomsalt$encryptedhash... 的长字符串，复制它。
+
+### 允许root远程登录并重置root密码
+```yaml {filename="enable_root.yml"}
+---
+- hosts: servers
+  become: yes  # 开启 sudo 提权
+  tasks:
+    - name: 1. 修改 SSH 配置允许 Root 登录
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PermitRootLogin'
+        line: 'PermitRootLogin yes'
+        state: present
+
+    - name: 2. 确保 SSH 允许密码验证 (如果是云主机默认可能关闭)
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PasswordAuthentication'
+        line: 'PasswordAuthentication yes'
+        state: present
+
+    - name: 3. 重启 SSH 服务以生效
+      service:
+        name: sshd  # 某些系统可能是 ssh
+        state: restarted
+
+    - name: 4. 修改 Root 用户的密码
+      user:
+        name: root
+        password: '$6$fJ...'  # <--- 粘贴刚才生成的哈希值放在这里
+```
+
+
+
+
 
