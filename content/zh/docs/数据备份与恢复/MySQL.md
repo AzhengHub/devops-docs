@@ -96,7 +96,7 @@ mysql -u root -p < /backup/mysql/database_name_backup_2023-10-01.sql
 
 ## 四、基于 XtraBackup
 
-推荐使用 Percona 提供的开源工具 **XtraBackup**。它直接拷贝底层数据文件。
+使用 Percona 提供的开源工具 **XtraBackup**。它直接拷贝底层数据文件。
 
 * **优点：** 备份恢复速度极快，支持热备（不影响业务读写）。
 * **缺点：** 只能恢复到相同版本/架构的 MySQL，操作步骤相对复杂。
@@ -112,38 +112,9 @@ sudo apt-get install percona-xtrabackup-57
 ```
 
 
-### 2. 使用 XtraBackup 进行全量+增量备份
-
-```sh
-# 假设每周一做全量，其余时间做增量
-
-# 1. [周一] 全量备份
-# 记录当前周的备份基准目录
-xtrabackup --backup \
-  --user=root --password='YOUR_PASSWORD' \
-  --target-dir=/data/backups/$(date +%Y%W)_full
-
-# 2. [周二] 第一次增量 (基于周一的全量)
-xtrabackup --backup \
-  --user=root --password='YOUR_PASSWORD' \
-  --target-dir=/data/backups/$(date +%F)_inc \
-  --incremental-basedir=/data/backups/$(date +%Y%W)_full
-
-# 3. [周三至周日] 随后的增量 (基于前一天的增量)
-# 注意：生产环境通常建议增量备份始终基于【全量】（优点是恢复快），
-# 或者基于【前一天增量】（优点是占用空间小）。以下示例为基于前一天：
-xtrabackup --backup \
-  --user=root --password='YOUR_PASSWORD' \
-  --target-dir=/data/backups/$(date +%F)_inc \
-  --incremental-basedir=/data/backups/$(date -d "yesterday" +%F)_inc
-```
-
-**其他常见选项：**
-- **--datadir**：指定 MySQL 数据目录（默认 `/var/lib/mysql`）。
-
-#### 2.1 自动化全量+增量备份脚本
-这个脚本会自动判断：如果是周一则进行全量备份，其他日期则进行增量备份。
-```sh
+### 2. 全量+增量备份脚本
+- 这个脚本会自动判断：如果是周一则进行全量备份，其他日期则基于周一增量备份。
+```sh {filename="mysql_backup.sh"}
 #!/bin/bash
 
 # 配置信息
@@ -157,36 +128,35 @@ DAY_OF_WEEK=$(date +%u) # 1-7，1是周一
 # 路径定义
 FULL_BACKUP_DIR="${BACKUP_ROOT}/${WEEK_NUM}_full"
 INC_BACKUP_DIR="${BACKUP_ROOT}/${DATE}_inc"
-PREV_DAY_DIR="${BACKUP_ROOT}/$(date -d "yesterday" +%F)_inc"
 LOG_FILE="${BACKUP_ROOT}/backup.log"
 
 exec >> "${LOG_FILE}" 2>&1
 
 echo "--- 备份开始: $(date) ---"
 
+# 逻辑：如果是周一，或者全量备份不存在，则做全量
 if [ "$DAY_OF_WEEK" -eq 1 ] || [ ! -d "$FULL_BACKUP_DIR" ]; then
-    echo "检测到周一或全量目录不存在，执行全量备份..."
+    echo "执行周全量备份..."
     xtrabackup --backup --user=$USER --password=$PASSWORD --target-dir=$FULL_BACKUP_DIR
 else
-    # 判断增量备份的基准：如果昨天有增量则基于昨天，否则基于本周全量
-    if [ -d "$PREV_DAY_DIR" ]; then
-        BASE_DIR=$PREV_DAY_DIR
-    else
-        BASE_DIR=$FULL_BACKUP_DIR
-    fi
-    echo "执行增量备份，基准目录: $BASE_DIR"
-    xtrabackup --backup --user=$USER --password=$PASSWORD --target-dir=$INC_BACKUP_DIR --incremental-basedir=$BASE_DIR
+    # 始终基于本周的全量备份进行增量
+    echo "执行累积增量备份，基准目录: $FULL_BACKUP_DIR"
+    xtrabackup --backup --user=$USER --password=$PASSWORD \
+      --target-dir=$INC_BACKUP_DIR \
+      --incremental-basedir=$FULL_BACKUP_DIR
 fi
 
 if [ $? -eq 0 ]; then
     echo "备份成功完成: $DATE"
 else
-    echo "备份失败，请检查输出信息"
+    echo "备份失败！"
     exit 1
 fi
-
-echo "--- 备份结束: $(date) ---"
 ```
+
+**其他常见选项：**
+- **--datadir**：指定 MySQL 数据目录（默认 `/var/lib/mysql`）。
+
 
 #### 2.1 定时自动备份
 - 建议将备份安排在业务低峰期（如凌晨 2 点）。
@@ -202,43 +172,24 @@ echo "--- 备份结束: $(date) ---"
 
 ### 3. 使用 XtraBackup 恢复
 
-在“每周一全量 + 每日一增量”的模式下，恢复的核心逻辑是：**先将全量备份作为基准，然后按顺序将每一天的增量“合并”到基准中，最后统一执行 Prepare。**
+由于每个增量包都包含了自全量备份以来所有的变化，恢复变得较为简单。
 
-假设在周四数据库宕机，需要恢复数据，你的备份目录如下：
-
-* `base` (周一的全量)
-* `inc1` (周二的增量)
-* `inc2` (周三的增量)
+假设周四宕机，恢复只需要：周一全量 + 周三增量。
 
 #### 3.1 准备全量备份
-首先，需要对全量备份进行处理，但由于后面还要合并增量，必须加上 --apply-log-only 参数。这告诉工具：只应用已提交的事务，不要回滚未提交的事务（因为未提交的事务可能在后续的增量包里）。
 ```sh
-xtrabackup --prepare --apply-log-only --target-dir=/data/backups/base
+xtrabackup --prepare --apply-log-only --target-dir=/data/backups/202401_full
 ```
+- 必须加上 `--apply-log-only` 表示只应用已提交的事务，不要回滚未提交的事务（因为未提交的事务可能在后续的增量包里）。
+
 #### 3.2 合并增量备份
-
-按照时间顺序，将每一个增量包逐个合并到 `base` 目录中。
-
-```bash
-# 合并周二的增量：
-xtrabackup --prepare --apply-log-only --target-dir=/data/backups/base \
-  --incremental-dir=/data/backups/inc1
-
-# 合并周三的增量（最后一个增量）：
-```bash
-xtrabackup --prepare --target-dir=/data/backups/base \
-  --incremental-dir=/data/backups/inc2
+```sh
+xtrabackup --prepare --target-dir=/data/backups/202401_full \
+  --incremental-dir=/data/backups/2024-01-03_inc
 ```
-> 如果是最后一个增量包，建议**去掉** `--apply-log-only`，这样工具会进行完整的回滚操作，使数据达到最终一致状态。
+- 这里没有加 --apply-log-only，因为这是我们合并的最后一个包，需要它进行最终的事务回滚以保证一致性。
 
-#### 3.3 运行整体 Prepare
-为了万无一失，在合并完所有增量后，对 `base` 目录执行一次标准的 Prepare：
-
-```bash
-xtrabackup --prepare --target-dir=/data/backups/base
-```
-
-#### 3.4 恢复回原目录
+#### 3.4 物理恢复回原目录
 ```sh
 # 1. 停止服务
 sudo systemctl stop mysql
@@ -248,7 +199,7 @@ sudo mv /var/lib/mysql /var/lib/mysql_old
 sudo mkdir /var/lib/mysql
 
 # 3. 拷贝备份（--target-dir 表示备份目录，--datadir 表示数据目录）
-xtrabackup --copy-back --target-dir=/data/backups/base --datadir=/var/lib/mysql
+xtrabackup --copy-back --target-dir=/data/backups/202401_full --datadir=/var/lib/mysql
 
 # 4. 修改权限归属为 mysql 用户
 sudo chown -R mysql:mysql /var/lib/mysql
@@ -258,23 +209,23 @@ sudo systemctl start mysql
 ```
 
 #### 3.5 使用 mysqlbinlog 工具重放二进制日志
-物理恢复只能回到**最后一次增量备份（周三凌晨）**的时间点。要追回周三到周四宕机前的“实时数据”，必须依赖二进制日志。
-##### 3.5.1 确定恢复起点
-在合并完所有增量并完成 copy-back 后，查看最后一个增量包（即 inc2）中的位置信息：
-```sh
-# 每次 XtraBackup 备份完成后，目录里都会生成一个 xtrabackup_binlog_info 文件，其中包含备份时刻对应的 Binlog 文件名和 Pos 节点，可以根据这个文件来恢复剩余数据。
-cat /data/backups/inc2/xtrabackup_binlog_info
 
-# 输出示例：mysql-bin.000015  120
+物理恢复完成后，数据库的状态停留在周三凌晨备份完成的那一刻。因此还需要基于该时间点重放二进制日志，以恢复到“实时数据”。
+
+##### 3.5.1 确定恢复起点
+在合并完所有增量并完成 copy-back 后，查看最后一个增量包中的位置信息：
+```sh
+# 查看周三增量包里的位点信息：
+cat /data/backups/2024-01-03_inc/xtrabackup_binlog_info
+# 输出示例: mysql-bin.000015  120
 ```
-- **注意：必须查看最后一个增量包里的文件，因为它代表了物理备份链条的终点。**
 
 ##### 3.5.2 导出并重放日志
 使用 mysqlbinlog 将该位置之后的所有操作导出为 SQL 并作用于数据库：
 
 ```sh
 # --start-position 对应上面查到的 120
-# /var/lib/mysql/mysql-bin.000015 是你最后的日志文件
+# /var/lib/mysql/mysql-bin.000015 是最后的日志文件
 mysqlbinlog --start-position=120 /var/lib/mysql_old/mysql-bin.000015 \
   | mysql -u root -p
 ```
@@ -289,35 +240,3 @@ mysqlbinlog --start-position=120 /var/lib/mysql_old/mysql-bin.000015 /var/lib/my
 如果 MySQL 开启了 GTID，mysqlbinlog 命令可以不用指定 position，直接使用 --skip-gtids 或自动定位更加安全。
 {{% /alert %}}
 
----
-
-## 五、自动化备份
-
-建议编写脚本并通过 Crontab 定时执行。为了安全，建议将密码写入配置文件，而不是明文写在命令中。
-
-**1. 创建认证文件 `~/.my.cnf**`**
-
-```ini
-[mysqldump]
-user=root
-password=Password
-
-```
-
-*设置权限：`chmod 600 ~/.my.cnf*`
-
-**2. 添加定时任务 (Crontab)**
-
-```bash
-sudo crontab -e
-
-```
-
-```bash
-# 每天凌晨 3 点执行全量逻辑备份
-0 3 * * * mysqldump --defaults-extra-file=/root/.my.cnf --all-databases --single-transaction | gzip > /data/backups/mysql_$(date +\%F).sql.gz
-
-# 建议添加清理脚本，删除 7 天前的备份文件
-# 0 4 * * * find /data/backups/ -name "*.sql.gz" -mtime +7 -delete
-
-```

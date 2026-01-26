@@ -27,30 +27,6 @@ status: # 资源运行时的状态，无需手动指定
 ...
 ```
 
-## 注意事项
-
-- **如果仅创建裸 Pod，而没有关联 Deployment 之类的控制器，那么 Pod 在删除后不会重建**
-
-```yaml
-# kubectl get pod
-NAME    READY   STATUS    RESTARTS   AGE
-myapp   1/1     Running   0          19m
-
-# kubectl get deployments.apps 
-No resources found in default namespace.
-
-# kubectl get replicationcontrollers
-No resources found in default namespace.
-
-
-# Pod 在删除后不会重建
-# kubectl delete pod myapp 
-pod "myapp" deleted
-# kubectl get pod
-No resources found in default namespace.
-```
-
-
 
 
 

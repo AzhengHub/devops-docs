@@ -2,14 +2,14 @@
 title: "作为web服务器"
 ---
 
-# 前言
+## 前言
 
 - Nginx 作为 Web 服务器时主要负责处理 html、图片、js、css、txt 等静态资源
 - 动态资源的请求可以通过反向代理实现
 
 
 
-# mime
+## mime
 
 - MIME（Multipurpose Internet Mail Extensions）是多用途互联网邮件扩展标准。它是一个用于描述文件内容类型的标准。MIME 用于在互联网上交换各种类型的数据，如文本、图像、音频、视频、应用程序等。
 - 在Web中，MIME类型通常指定在 HTTP 请求头部的 Content-Type 属性中，**用于表明发送的数据类型，以帮助客户端或浏览器正确地处理响应数据。**
@@ -48,7 +48,7 @@ http {
 
 
 
-## 范例
+### 范例
 
 - 准备测试页面
 
@@ -87,9 +87,9 @@ Content-Type: text/html
 
 
 
-# 定义 http 响应首部
+## 定义 http 响应首部
 
-## 自定义 http 响应首部
+### 自定义 http 响应首部
 
 - 添加头部报文信息，实现对后端服务器响应给客户端的报文中添加指定的响应首部字段
 - 由 ngx_http_headers_module 模块提供此功能
@@ -100,7 +100,7 @@ Default： —
 Context：http, server, location, if in location
 ```
 
-### add_header 配置范例
+#### add_header 配置范例
 
 ```bash
 # 生产中通常开启，可以间接性的告诉攻击者攻击的是CDN等信息
@@ -109,7 +109,7 @@ add_header X-Accel $server_name # 客户访问的FQDN，常用
 add_header X-Via $server_addr; # 当前nginx主机的IP，不常用
 ```
 
-### add_header 测试范例
+#### add_header 测试范例
 
 ```bash
 [root@centos8 ~]# vim /apps/nginx/conf/conf.d/pc.conf
@@ -200,7 +200,7 @@ X-MyHeader: Hello, world!
 
 
 
-## 是否显示字符集
+### 是否显示字符集
 
 - 定义
 
@@ -229,7 +229,7 @@ Content-Type: text/html; charset=utf-8
 
 
 
-## 是否显示 nginx 版本
+### 是否显示 nginx 版本
 
 - 定义
 
@@ -266,7 +266,7 @@ Server: nginx
 
 
 
-# 多虚拟主机的实现
+## 多虚拟主机的实现
 
 - 可以基于不同的IP、不同的端口、不同的域名实现不同的虚拟主机
 - 依赖于核心模块 ngx_http_core_module 实现
@@ -330,7 +330,7 @@ nginx: configuration file /etc/nginx/nginx.conf test is successful
 
 
 
-## 测试
+### 测试
 
 ```bash
 # echo 10.0.0.8 www.azheng.com www.m.azheng.com >> /etc/hosts
@@ -354,7 +354,7 @@ mobile index.html
 pc index.html
 ```
 
-## 多虚拟主机的优先级
+### 多虚拟主机的优先级
 
 - 虚拟机主机的默认优先级是根据配置文件中的字母顺序来判断的
 
@@ -376,9 +376,9 @@ pc index.html
 
 
 
-# root 与 alias
+## root 与 alias
 
-## root
+### root
 
 - 表示访问root+location的目录
 - https://nginx.org/en/docs/http/ngx_http_core_module.html#root
@@ -389,7 +389,7 @@ Default: root html;
 Context: http, server, location, if in location
 ```
 
-### 范例
+#### 范例
 
 ```nginx
 server {
@@ -418,7 +418,7 @@ server {
 /data/html/uri_a/index.html
 ```
 
-## alias
+### alias
 
 - 表示访问/about即跳转到/opt/html目录下
 - 文档：https://nginx.org/en/docs/http/ngx_http_core_module.html#alias
@@ -431,7 +431,7 @@ Context: location
 
 
 
-### 范例
+#### 范例
 
 ```nginx
 #范例
@@ -465,7 +465,7 @@ server {
 
 
 
-## root 与 alias 的区别
+### root 与 alias 的区别
 
 在Nginx服务器配置中，root和alias指令都可以用来指定网站的根目录，但它们之间有一些区别。
 
@@ -497,7 +497,7 @@ location /test/ {
 
 
 
-# location
+## location
 
 - 在Nginx中 `location` 是一个非常重要的指令，用于匹配请求的URL。在请求到达 Nginx Web 服务器时，Nginx 会按照一定的匹配优先级去匹配 `location`，如果匹配成功则将请求路由到对应的处理代码或资源。
 - 在一个server中location配置段可存在多个，用于实现uri到文件系统的路径映射
@@ -529,7 +529,7 @@ location [ = | ^~ | ~ | ~* ] uri {
 
 
 
-## location 匹配逻辑
+### location 匹配逻辑
 
 - location在匹配的时候，会按照配置文件中定义的顺序依次匹配，匹配字符串最长的location优先级最高；
 - 如果location中包含匹配符，匹配符也有优先级：
@@ -541,9 +541,9 @@ location [ = | ^~ | ~ | ~* ] uri {
 
 
 
-## location 范例
+### location 范例
 
-### 精确匹配 =
+#### 精确匹配 =
 
 - 精确匹配的优先级最高
 - 精确匹配一般用于匹配组织的 logo 等相对固定的 URL
@@ -556,7 +556,7 @@ location = /admin { # 匹配严格为 http://domain.com/admin 的URL
 
 
 
-### 正则匹配区分大小写 ~
+#### 正则匹配区分大小写 ~
 
 - 如果没有前缀匹配，则尝试使用正则匹配。在 location 模式中使用（）和（*）之类的正则表达式选择。
 
@@ -578,7 +578,7 @@ location ~ ^/blogs/(.*)\.html$ { # 匹配 /blogs/*/*.html，并把 * 通配符�
 
 
 
-### 正则匹配忽略大小写 ~*
+#### 正则匹配忽略大小写 ~*
 
 - **注意：虽忽略大小写，但输入的文件名在主机上必须存在，否则也会报404，例如：访问 aB.jpg 磁盘上也许存在此文件**
 
@@ -595,7 +595,7 @@ location ~* \.(gif|jpg|jpeg)$ { # 匹配 .gif/.jpg/.jpeg 后缀的URL，不论�
 
 
 
-### 正则匹配忽略大小写并匹配开头 ^~
+#### 正则匹配忽略大小写并匹配开头 ^~
 
 ```nginx
 location ^~ /images { # 匹配以images开头，不论大小写
@@ -605,7 +605,7 @@ location ^~ /images { # 匹配以images开头，不论大小写
 
 
 
-### 普通字符匹配
+#### 普通字符匹配
 
 - 例如：如果以上方式都无法匹配，则使用普通字符匹配，使用最长匹配路径（完整路径匹配）。
 - 当以上 `location` 都无法匹配时，Nginx 将使用此 `location`。
@@ -622,7 +622,7 @@ location /news {
 }
 ```
 
-### 前缀匹配 /
+#### 前缀匹配 /
 
 - 如果没有精确匹配则检查前缀匹配，如果请求URL以 `location` 模式开头，则使用此 `location`。
 - 例如：当请求的URL为 `/path/index.html` 时，Nginx 将使用该 `location`。
@@ -648,7 +648,7 @@ location /images { # 匹配以 /images 开头的所有URL，如 /images/foo.jpg
 
 
 
-### 其他例子
+#### 其他例子
 
 **静态文件服务器：**
 
@@ -703,7 +703,7 @@ location / {
 
 
 
-## location 官方范例
+### location 官方范例
 
 ```bash
 location = / {
@@ -745,9 +745,9 @@ location ~* \.(gif|jpg|jpeg)$ {
 
 
 
-# 访问控制
+## 访问控制
 
-## 四层访问控制
+### 四层访问控制
 
 - 通过客户端的源IP地址进行访问限制
 - **注意：能在防火墙上设置规则就尽量在防火墙上设置，这样可以减少资源的浪费**
@@ -766,7 +766,7 @@ location / {
 
 
 
-## 请求方法访问控制
+### 请求方法访问控制
 
 `limit_except` 是 Nginx 服务器中的一个指令，它可以限制客户端使用除了指定的请求方法之外的其他方法。
 
@@ -774,7 +774,7 @@ location / {
 
 可以在 `http`、`server` 或 `location` 上下文中使用 `limit_except`。
 
-### 范例-1
+#### 范例-1
 
 下面是一个例子，它在 `location` 上下文中使用 `limit_except` 来限制只有 POST 请求方法被允许：
 
@@ -792,7 +792,7 @@ location /api {
 
 
 
-### 范例-2
+#### 范例-2
 
 可以使用 Nginx 的 `limit_except`、`allow` 和 `deny` 指令来实现该要求。具体配置如下：
 
@@ -809,7 +809,7 @@ location / {
 
 需要注意的是，`allow` 和 `deny` 指令是按顺序匹配的。如果 `allow` 匹配成功，请求将被允许访问；如果 `deny` 匹配成功，请求将被拒绝访问。如果都没有匹配成功，则默认情况下请求将被禁止访问。
 
-#### 验证
+##### 验证
 
 你可以使用以下命令来验证 Nginx 的配置是否按照预期工作：
 
@@ -835,11 +835,11 @@ curl -I http://your-server-ip/your-path
 
 
 
-# basic 认证
+## basic 认证
 
 - https://nginx.org/en/docs/http/ngx_http_auth_basic_module.html
 
-## 生成所需的账号和密码
+### 生成所需的账号和密码
 
 ```bash
 # Centos安装包
@@ -860,7 +860,7 @@ user1:$apr1$ZWCIkUJw$d8vxof6SpwGpMe69HZ/8Q/
 Adding password for user user2
 ```
 
-## 在Nginx配置文件中添加
+### 在Nginx配置文件中添加
 
 ```nginx
 #准备测试页面
@@ -883,7 +883,7 @@ server {
 
 
 
-## 验证
+### 验证
 
 ```sh
 # curl www.azheng.com/login -I 
@@ -907,7 +907,7 @@ test_login_page
 
 
 
-# 自定义错误页面
+## 自定义错误页面
 
 - 用于定义错误页面的处理方式。可以指定HTTP状态码和对应的页面。
 - https://nginx.org/en/docs/http/ngx_http_core_module.html#error_page
@@ -920,7 +920,7 @@ Context： http, server, location,if in location
 
 
 
-## 范例：只返回错误图片
+### 范例：只返回错误图片
 
 - 不常用，因为通常返回的都是自定义的错误页面，例如 error.html
 
@@ -937,7 +937,7 @@ server {
 
 
 
-## 范例：不同错误页面分别定义
+### 范例：不同错误页面分别定义
 
 ```nginx
 server {
@@ -959,7 +959,7 @@ server {
 
 
 
-## 范例：如果页面不存在，则跳转到主页
+### 范例：如果页面不存在，则跳转到主页
 
 - 最好改为防止截胡的写法
 
@@ -977,7 +977,7 @@ server {
 
 
 
-## 范例：防止截胡
+### 范例：防止截胡
 
 - 防止浏览器"截胡"，例如：使用360访问到错误或不存在的页面时，会显示浏览器自带的错误提示，而非网站本身的错误页面
   - 解决方案：404转为302（因为302状态码浏览器一般不会截胡）
@@ -1012,7 +1012,7 @@ ETag: "61dfa67f-1d"
 
 
 
-# 检测文件是否存在
+## 检测文件是否存在
 
 - try_files 会按指定顺序检查文件是否存在，并使用第一个找到的文件或文件夹（结尾加斜线表示为文件夹）；
 - 如果所有文件或文件夹都找不到，会进行一个内部重定向到最后一个参数；
@@ -1034,7 +1034,7 @@ Context:	server, location
 
 
 
-## 范例：补全文件
+### 范例：补全文件
 
 ```nginx
 #准备页面
@@ -1081,7 +1081,7 @@ Accept-Ranges: bytes
 pc index.html # 返回主页，是根据 try_files 中 $uri.html 来补全的
 ```
 
-## 范例：自定义返回状态码
+### 范例：自定义返回状态码
 
 ```nginx
 # 修改配置文件
@@ -1117,7 +1117,7 @@ pc index.html # 返回主页，是根据 try_files 中 $uri.html 来补全的
 
 
 
-## GPT
+### GPT
 
 在nginx配置文件中，try_files指令用于指定尝试访问文件的顺序，通常用于处理静态文件的请求。它的语法为：
 
@@ -1186,7 +1186,7 @@ bashCopy codelocation / {
 
 
 
-## 范例
+### 范例
 
 `try_files`指令是`core_module`模块提供的一个非常有用的功能，它可以帮助Nginx服务器在本地文件系统中查找指定的文件，并按照指定的顺序进行尝试。当Nginx服务器接收到一个请求时，它将会按照`try_files`指令中指定的顺序，依次尝试查找文件，直到找到为止。
 
@@ -1202,7 +1202,7 @@ bashCopy codelocation / {
 
 
 
-# 长连接配置
+## 长连接配置
 
 - 在Nginx中，keepalive_timeout是一个用于控制HTTP keep-alive连接超时的指令。
 - HTTP **keep-alive是指在一次TCP连接中，客户端可以连续发送多个HTTP请求，而不必每次请求都建立一个新的TCP连接。这可以减少TCP连接的建立和断开次数，从而提高性能。**
@@ -1212,9 +1212,9 @@ bashCopy codelocation / {
 
 - keepalive_timeout 指令用于控制一个 keep-alive 连接的最大空闲时间，即服务器在一定时间内没有收到客户端发送的请求时，就会关闭这个连接。
 
-## 相关指令说明
+### 相关指令说明
 
-### keepalive_timeout
+#### keepalive_timeout
 
 - https://nginx.org/en/docs/http/ngx_http_core_module.html#keepalive_timeout
 
@@ -1227,7 +1227,7 @@ Context: http, server, location
 - timeout 指定了连接的最大空闲时间，单位为秒。0 表示禁止长连接
 - header_timeout 是一个可选参数，用于设置在读取 HTTP 头信息时的超时时间。（HTTP响应报文中显示的）
 
-### keepalive_requests
+#### keepalive_requests
 
 - https://nginx.org/en/docs/http/ngx_http_core_module.html#keepalive_requests
 - 设置每个长连接（keep-alive）可以处理的最大请求数。当一个长连接处理了一定数量的请求后，nginx会主动关闭该连接，以避免连接资源被占用过久，导致服务器负载过高或者资源浪费。
@@ -1240,7 +1240,7 @@ Context: http, server, location
 
 
 
-### keepalive_disable
+#### keepalive_disable
 
 - keepalive_disable 可以实现针对不同的场景来禁用长连接，例如浏览器
 
@@ -1312,9 +1312,9 @@ http {
 
 
 
-## 范例
+### 范例
 
-### 定义
+#### 定义
 
 - 当一个 keep-alive 连接超过 65 秒没有收到新的请求时，Nginx 会关闭这个连接，从而释放服务器资源。
 - 而 60 表示是在HTTP响应报文中显示的时间
@@ -1326,7 +1326,7 @@ http {
 }
 ```
 
-### 测试
+#### 测试
 
 ```sh
 # 实现前
@@ -1375,7 +1375,7 @@ Connection: keep-alive
 
 
 
-## 范例：关闭长连接
+### 范例：关闭长连接
 
 ```nginx
 http {
@@ -1395,13 +1395,13 @@ Connection: close # close 关闭了长连接，keep-alive 开启了长连接
 
 
 
-# 实现 https
+## 实现 https
 
 - 由 ngx_http_ssl_module 模块提供
 - 官方文档：https://nginx.org/en/docs/http/ngx_http_ssl_module.html
 - 执行nginx -V 查看是否开启 --with-stream_ssl_module 模块，否则无法使用https，编译安装需指定开启次模块
 
-## 查看nginx是否支持https
+### 查看nginx是否支持https
 
 - nginx -V默认为标准错误输出，需要将其改为标准输出
 
@@ -1410,7 +1410,7 @@ Connection: close # close 关闭了长连接，keep-alive 开启了长连接
 ...with-stream_ssl_module...
 ```
 
-## https常用参数说明
+### https常用参数说明
 
 - Context:	http, server
 
@@ -1440,7 +1440,7 @@ ssl_session_timeout time;
 
 
 
-## 实现单域名https
+### 实现单域名https
 
 ```bash
 #将证书文件导入到服务端
@@ -1483,7 +1483,7 @@ pc index.html
 
 
 
-## 实现多域名https
+### 实现多域名https
 
 - 基于Nginx的SNI功能实现，SNI解决了一个Nginx服务器内使用一个IP绑定多个域名和证书的功能
 - SNI具体功能是客户端在连接到服务器建立SSL链接之前先向服务器发送要访问网站的域名，然后服务器在根据这个域名返回给客户端一个合适的证书
@@ -1547,15 +1547,15 @@ pc index.html
 ...
 ```
 
-## ---
+### ---
 
 创建自签名证书并将 Nginx 配置为 HTTPS 需要几个步骤。以下是详细的流程：
 
-### 1. 生成自签名证书和私钥
+#### 1. 生成自签名证书和私钥
 
 首先，你需要创建一个自签名证书和与之对应的私钥。可以使用 `openssl` 工具来完成这项工作。
 
-#### 步骤 1：生成私钥
+##### 步骤 1：生成私钥
 
 运行以下命令生成一个 2048 位的 RSA 私钥：
 
@@ -1568,7 +1568,7 @@ openssl genpkey -algorithm RSA -out nginx.key
 
 你也可以使用 `openssl genrsa` 来生成私钥，但 `genpkey` 是更推荐的方式。
 
-#### 步骤 2：生成证书签名请求（CSR）
+##### 步骤 2：生成证书签名请求（CSR）
 
 你可以使用生成的私钥来创建一个证书签名请求（CSR）。虽然你是创建自签名证书，生成 CSR 的步骤仍然很重要：
 
@@ -1595,7 +1595,7 @@ openssl req -new -key /etc/nginx/ssl/nginx.key -out /etc/nginx/ssl/nginx.csr \
 - `CN`：通用名称（Common Name），即你的域名或 IP 地址
 - `emailAddress`：电子邮件地址
 
-#### 步骤 3：生成自签名证书
+##### 步骤 3：生成自签名证书
 
 接下来，使用 CSR 和私钥生成自签名证书：
 
@@ -1605,9 +1605,9 @@ openssl x509 -req -days 365 -in /etc/nginx/ssl/nginx.csr -signkey /etc/nginx/ssl
 
 这会生成一个有效期为 365 天的自签名证书 `nginx.crt`。
 
-### 2. 配置 Nginx 使用 HTTPS
+#### 2. 配置 Nginx 使用 HTTPS
 
-#### 步骤 1：创建 SSL 证书和密钥目录
+##### 步骤 1：创建 SSL 证书和密钥目录
 
 确保 Nginx 有合适的目录来存放证书和私钥：
 
@@ -1617,7 +1617,7 @@ mv /path/to/nginx.crt /etc/nginx/ssl/
 mv /path/to/nginx.key /etc/nginx/ssl/
 ```
 
-#### 步骤 2：修改 Nginx 配置
+##### 步骤 2：修改 Nginx 配置
 
 编辑 Nginx 配置文件，通常是 `/etc/nginx/nginx.conf` 或者 `/etc/nginx/sites-available/default`。
 
@@ -1644,7 +1644,7 @@ server {
 
 1. 这样配置将 Nginx 设为监听 HTTPS 的 443 端口，并指向你刚才创建的证书和私钥文件。
 
-#### 步骤 3：重定向 HTTP 到 HTTPS（可选）
+##### 步骤 3：重定向 HTTP 到 HTTPS（可选）
 
 如果你希望所有 HTTP 流量（端口 80）自动重定向到 HTTPS，你可以添加一个 HTTP 到 HTTPS 的重定向 `server` 配置块：
 
@@ -1657,7 +1657,7 @@ server {
 }
 ```
 
-#### 步骤 4：检查配置并重载 Nginx
+##### 步骤 4：检查配置并重载 Nginx
 
 
 
@@ -1673,11 +1673,11 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-### 3. 测试 HTTPS
+#### 3. 测试 HTTPS
 
 现在，你可以通过访问 `https://your_domain_or_ip` 来测试 HTTPS 是否正常工作。如果你使用的是自签名证书，浏览器会警告证书不被信任，这是正常的，因为证书没有被权威证书机构（CA）签署。你可以手动添加信任，或者继续使用它进行测试。
 
-### 4. 防火墙设置（如果适用）
+#### 4. 防火墙设置（如果适用）
 
 确保防火墙允许 HTTPS 流量。以 `ufw` 为例，允许 443 端口的流量：
 
@@ -1686,19 +1686,19 @@ sudo ufw allow 443/tcp
 sudo ufw reload
 ```
 
-### 总结
+#### 总结
 
 通过以上步骤，你已经成功创建了一个自签名证书，并将 Nginx 配置为支持 HTTPS。虽然自签名证书适用于测试环境，但在生产环境中，建议使用由受信任证书颁发机构（CA）签发的证书。
 
 
 
-# 实现 HSTS
+## 实现 HSTS
 
 - HTTP严格传输安全协议（英语：HTTP Strict Transport Security，简称：HSTS），是一套由互联网工程任务组发布的互联网安全策略机制。网站可以选择使用HSTS策略，来让浏览器强制使用HTTPS与网站进行通信，以减少会话劫持风险。
 - 官方文档：https://www.nginx.com/blog/http-strict-transport-security-hsts-and-nginx/
 - **注意：配置rewrite才能实现http跳转到https**
 
-## 范例
+### 范例
 
 ```nginx
 server {
@@ -1727,13 +1727,13 @@ server {
 
 
 
-# favicon.ico
+## favicon.ico
 
 - favicon.ico 文件是浏览器收藏网站时显示的图标 也是 网页顶部菜单栏显示的图标
 - 当客户端使用浏览器访问页面时，浏览器会主动发起请求在服务上寻找 favicon.ico 来获取图标
 - 如找不到会在浏览器详情页中显示404未找到，也会在服务器端日志文件中记录此信息
 
-## 解决办法：
+### 解决办法：
 
 ```nginx
 #方法一：服务器不记录日志
@@ -1759,7 +1759,7 @@ server {
 
 
 
-# Rewrite
+## Rewrite
 
 在nginx中，rewrite指令可以用于重写URL或者修改请求的参数。以下是一些rewrite指令的用途：
 
@@ -1772,7 +1772,7 @@ server {
 
 
 
-## Rewrite  先决条件
+### Rewrite  先决条件
 
 - 由 ngx_http_rewrite_module 模块实现，并且使用 PCRE 正则表达式更改请求 URI、返回重定向和条件选择配置，因此依赖PCRE，编译安装时需要安装PCRE库
 
@@ -1796,7 +1796,7 @@ server {
 
 
 
-## Rewrite 相关指令
+### Rewrite 相关指令
 
 以下是nginx中常用的rewrite相关指令：
 
@@ -1812,7 +1812,7 @@ server {
 
 
 
-## if
+### if
 
 - if 用于条件匹配判断，并根据条件判断结果选择不同的nginx配置
 - 注意：nginx的 if 语法只能实现单次判断，不支持 if else 或 if elif 这样的多重判断
@@ -1832,7 +1832,7 @@ if (条件匹配) {
 
 
 
-### 匹配参数说明
+#### 匹配参数说明
 
 - 使用正则表达式对变量进行匹配，匹配成功时if指令认为是true，反之为false
 - **变量与表达式之间**可以使用以下符号链接：
@@ -1853,7 +1853,7 @@ if (条件匹配) {
 -x 和 !-x   #判断文件是否可执行和是否不可执行
 ```
 
-### if 范例
+#### if 范例
 
 - 条件成立则执行action的内容，反之则不执行
 
@@ -1899,7 +1899,7 @@ if ($http_user_agent ~ Chrome) {
 
 
 
-## set
+### set
 
 - set 可以实现设置自定义变量
 - 指定key并给其定义一个变量，变量可以调用nginx内置变量赋值给key
@@ -1913,7 +1913,7 @@ Context:	server, location, if
 
 
 
-### set 范例
+#### set 范例
 
 ```nginx
 # vim /apps/nginx/conf/conf.d/pc.conf
@@ -1938,7 +1938,7 @@ www.azheng.com:80
 
 
 
-## return
+### return
 
 - return 可以实现向客户端返回响应状态码，如：301、302、403、500等
 - **注意：处于此指令后的所有配置都将不被执行**
@@ -1954,7 +1954,7 @@ Context: server, location, if
 
 
 
-### return 范例
+#### return 范例
 
 - **返回给客户端指定的HTTP状态码**
 
@@ -2032,7 +2032,7 @@ location /test_return {
 
 
 
-## rewrite
+### rewrite
 
 - rewrite 主要是对用户请求的 URL 或 URI 做具体处理
 - 通过正则表达式的匹配来改变 URL 或 URI，从而实现路径重写等操作
@@ -2059,7 +2059,7 @@ Context:	server, location, if
 
 
 
-### last
+#### last
 
 - 在 Nginx 的 rewrite 模块中，last 是一个常用的指令，它的作用是重新开始新的匹配，以便进一步处理。通常用于执行内部重定向，即将客户端的请求重新路由到另一个 URI 上。
 - 在 rewrite 规则中，last 指令必须放在指令的最后，表示终止当前规则，并重新开始匹配。
@@ -2092,15 +2092,15 @@ Context:	server, location, if
 
 
 
-#### last 使用场景
+##### last 使用场景
 
 - last 指令通常用于执行内部重定向。例如，当客户端请求的 URI 不符合特定的规则时，可以将其重定向到新的 URI。
 
 
 
-#### last 指令使用示例
+##### last 指令使用示例
 
-##### 示例一
+###### 示例一
 
 - 在这个示例中，当客户端请求 URI "/old-url" 时，Nginx 将其重写为 "/new-url"，并重新开始匹配。
 - 这可以让 Nginx 将新的 URI 路由到不同的位置进行进一步处理。
@@ -2111,7 +2111,7 @@ location /old-url {
 }
 ```
 
-##### 示例二
+###### 示例二
 
 - 除了执行内部重定向外，last 指令还可以用于实现循环规则。例如，以下规则将把所有的 /a/URI/ 转换为 /b/URI/，直到无法进行转换：
 - 在这个规则中，last 指令的作用是在每次匹配后重新开始匹配，直到无法再匹配为止。
@@ -2124,7 +2124,7 @@ location /a/ {
 
 
 
-### break
+#### break
 
 - 在 Nginx 的 rewrite 模块中，break 指令用于停止当前的 rewrite 操作，并将处理流程转交给 Nginx 的其他模块进行处理。
 - 在 rewrite 规则中，break 指令可以出现在任意位置，表示终止当前规则，并将处理流程交给 Nginx 的其他模块进行处理。
@@ -2148,7 +2148,7 @@ location /a/ {
 
 
 
-#### break 使用场景
+##### break 使用场景
 
 break 指令通常用于在 rewrite 规则中终止当前的操作，并将控制权交给 Nginx 的其他模块进行处理。
 
@@ -2164,7 +2164,7 @@ location /static/ {
 
 
 
-#### break 范例一
+##### break 范例一
 
 ```nginx
 if ($slow) {
@@ -2173,7 +2173,7 @@ if ($slow) {
 }
 ```
 
-#### break 范例二
+##### break 范例二
 
 - 1
 
@@ -2224,7 +2224,7 @@ xiaohong
 
 
 
-### redirect
+#### redirect
 
 - redirect 可以实现临时重定向 302（域名暂时用这个，以后可能还会改变）
   - 临时重定向的特定是域名解析记录不会缓存到客户端浏览器中
@@ -2292,7 +2292,7 @@ redirect 指令的特点如下：
 
 
 
-### permanent
+#### permanent
 
 - 永久重定向301（域名以后不会再更改）
   - 永久重定向的特点是域名解析记录会缓存到客户端浏览器中
@@ -2358,7 +2358,7 @@ permanent 指令是 Nginx rewrite 模块中一个非常有用的指令，它可�
 
 
 
-### 范例：last 和 break的区别
+#### 范例：last 和 break的区别
 
 在 Nginx 的 rewrite 模块中，last 和 break 是两个常用的指令，它们的作用是不同的。
 
@@ -2386,7 +2386,7 @@ rewrite ^/api/(.*)$ /index.php?$1 break;
 
 
 
-#### 环境准备
+##### 环境准备
 
 ```bash
 # 准备目录
@@ -2401,7 +2401,7 @@ echo 'test2' > /data/web/pc/html/test2/index.html
 chown -R nginx.nginx /data/web/
 ```
 
-#### break 范例
+##### break 范例
 
 ```nginx
 # vim /apps/nginx/conf.d/pc.conf 
@@ -2451,7 +2451,7 @@ test1 page # 即 /test1 中的内容，结果显示没有继续向下匹配test2
 
 
 
-#### last 范例
+##### last 范例
 
 ```nginx
 # vim /apps/nginx/conf.d/pc.conf
@@ -2506,7 +2506,7 @@ test2 page # /test2 中的内容
 
 
 
-#### 总结
+##### 总结
 
 - **last 与 break 都停止处理后续 rewrite 指令集，但是 last 会对重写后的新规则重新发起一个新请求，并重新匹配后续的 location。**
 
@@ -2535,7 +2535,7 @@ test2 page # /test2 中的内容
 
 
 
-### 范例：静态页面重写
+#### 范例：静态页面重写
 
 - break 适用于不改变客户端访问方式，但是要将访问的目的 URL 做单次重写的场景
 
@@ -2576,7 +2576,7 @@ location /statics { # 新路径也可以直接响应请求
 
 
 
-### 范例：域名永久与临时重定向
+#### 范例：域名永久与临时重定向
 
 - **永久与临时重定向的核心区别：永久重定向会缓存DNS解析记录到客户端浏览器，F12中有 from disk cache 的信息，而临时重定向不会**
 
@@ -2620,9 +2620,9 @@ vary: Accept-Encoding
 
 
 
-### 范例：实现HTTP自动跳转HTTPS
+#### 范例：实现HTTP自动跳转HTTPS
 
-#### 方法一
+##### 方法一
 
 - 出于安全考虑，将用户的 http 请求全部自动跳转到 https
 - 也可以实现部分location跳转
@@ -2655,7 +2655,7 @@ server {
 
 
 
-#### 方法二
+##### 方法二
 
 要在Nginx中实现HTTP自动跳转HTTPS，您可以使用以下配置：
 
@@ -2685,7 +2685,7 @@ server {
 
 
 
-#### 后语
+##### 后语
 
 **以上两种方法是不是都可以实现HTTP自动跳转HTTPS**
 
@@ -2702,7 +2702,7 @@ server {
 
 
 
-### 范例：访问错误URI时重定向到主页
+#### 范例：访问错误URI时重定向到主页
 
 - 假设当用户访问公司网站时输入了一个错误的URL，可以将用户的请求自动重定向到主页
 
@@ -2748,7 +2748,7 @@ pc index.html
 
 
 
-### 范例：如果客户端是IE浏览器则跳转到指定目录
+#### 范例：如果客户端是IE浏览器则跳转到指定目录
 
 ```nginx
 if ( $http_user_agent ~ MSIE) {
@@ -2761,7 +2761,7 @@ if ( $http_user_agent ~ MSIE) {
 
 
 
-### 范例：单目录访问方式改为对象存储
+#### 范例：单目录访问方式改为对象存储
 
 - **要求：**
   - /20200106/static    -->   /static?id=20200106
@@ -2797,7 +2797,7 @@ rewrite ^/(\d+)/(static|image)/?$ /$2?id=$1 last;
 
 
 
-### 范例：多目录访问方式改为对象存储
+#### 范例：多目录访问方式改为对象存储
 
 - **要求：**
   - www.xiangzheng.vip/images/20200106/1.jpg
@@ -2816,7 +2816,7 @@ if ( $host ~* (.*)\.xiangzheng\.vip) {
 
 
 
-### 范例：将 URI "/old-url" 重写为 "/new-url"
+#### 范例：将 URI "/old-url" 重写为 "/new-url"
 
 在 Nginx 服务器中，rewrite flag 是指用于重写 URL 的指令。它可以修改客户端请求的 URI（Uniform Resource Identifier），并将请求路由到新的位置。在 Nginx 中，rewrite flag 主要由 rewrite 模块提供支持。
 
@@ -2832,7 +2832,7 @@ rewrite ^/old-url$ /new-url permanent;
 
 
 
-### 范例：你问我答
+#### 范例：你问我答
 
 你能不能出几道关于 nginx rewrite 的题目，然后我来回答，最后你看看对不对
 
@@ -2853,7 +2853,7 @@ rewrite ^/old-url$ /new-url permanent;
 
 
 
-## rewrite_log
+### rewrite_log
 
 - 设置是否开启记录 ngx_http_rewrite_module 模块日志记录到 error_log日志文件当中
 - **注意：需要日志级别为 notice**
@@ -2876,9 +2876,9 @@ Context:	http, server, location, if
 
 
 
-# 跨域
+## 跨域
 
-## 跨域概述
+### 跨域概述
 
 - https://help.aliyun.com/document_detail/31870.html?spm=5176.8466032.0.0.6a9d1450TWx022
 
@@ -2903,7 +2903,7 @@ Context:	http, server, location, if
 
 
 
-## 常见跨域情况
+### 常见跨域情况
 
 - 网络协议不同，如http协议访问https协议 ;
 - 端口不同，如80端口访问8080端口 ;
@@ -2912,7 +2912,7 @@ Context:	http, server, location, if
 
 
 
-## 跨域解决方案
+### 跨域解决方案
 
 - 可以通过 CORS （Cross-Origin Resource Sharing）跨域资源共享来解决
 
@@ -2951,9 +2951,9 @@ Context:	http, server, location, if
 
 
 
-### 通过 Nginx 添加响应报文头
+#### 通过 Nginx 添加响应报文头
 
-#### Nginx 实现跨域配置参考
+##### Nginx 实现跨域配置参考
 
 - 普通跨域请求：只需服务器端设置 Access-Control-Allow-Origin
 
@@ -3016,15 +3016,15 @@ http {
 
 
 
-## 范例：Nginx 实现跨域
+### 范例：Nginx 实现跨域
 
-### 环境说明
+#### 环境说明
 
 - 两个不同子域的域名：
   - test1.xiangzheng.com
   - test2.xiangzheng.com
 
-### 准备 index 文件
+#### 准备 index 文件
 
 - **test1 子域**：/data/nginx/static_html/index_test1.html
 
@@ -3053,7 +3053,7 @@ test2 page
 
 
 
-### 实现跨域前测试
+#### 实现跨域前测试
 
 - **nginx 配置：**
 
@@ -3095,7 +3095,7 @@ http {
 
 ![未作跨域设置前2](/docs/http/nginx/未作跨域设置前2.jpg)
 
-### 实现跨域后测试
+#### 实现跨域后测试
 
 - **nginx 配置**
 
@@ -3147,7 +3147,7 @@ http {
 
 
 
-## 范例：OSS 实现跨域
+### 范例：OSS 实现跨域
 
 - 在云厂商的 OSS 管理界面中可以直接配置添加响应报文头，具体配置参阅下面的链接
 
@@ -3157,7 +3157,7 @@ http {
 
 
 
-# http压力测试
+## http压力测试
 
 ```bash
 ab [OPTIONS] URL
@@ -3178,7 +3178,7 @@ ab -c10 -n 100 http://10.0.0.8/
 
 
 
-# 开启压缩功能
+## 开启压缩功能
 
 - 将指定文件压缩以牺牲一定cpu资源作为条件换来节省带宽减少网络流量从而降低成本的效果
 - 由 ngx_http_gzip_module 模块提供此功能
@@ -3186,7 +3186,7 @@ ab -c10 -n 100 http://10.0.0.8/
 - 使用 SSL/TLS 协议时，压缩响应可能会受到 BREACH 攻击
 - Content：http, server, location
 
-## 配置说明
+### 配置说明
 
 ```nginx
 gzip on | off;
@@ -3205,7 +3205,7 @@ gzip_vary on | off;
 # 响应报文首部添加字段，默认为off，一般建议打开，在响应报文首部插入"Vary: Accept-Encoding"字段
 ```
 
-## 配置范例
+### 配置范例
 
 ```bash
 [root@centos8 ~]# vim /apps/nginx/conf/nginx.conf
@@ -3223,13 +3223,13 @@ http {
 
 
 
-# 防盗链
+## 防盗链
 
 valid_referers，定义有效的 referer，后面可以使用 if 对 referers 的内置变量进行判断，如果是无效的 referer 访问，就可以 return 个 403
 
 - 此功能是通过 ngx_http_referer_module 模块实现此功能
 
-## 盗链 概述
+### 盗链 概述
 
 
 
@@ -3238,7 +3238,7 @@ valid_referers，定义有效的 referer，后面可以使用 if 对 referers �
 
 - 防盗链基于客户端的referer实现
 
-## referer 概述
+### referer 概述
 
 - referer就是之前那个网站的域名
 - referer是记录打开一个页面之前记录从哪个页面跳转过来的标记信息
@@ -3256,7 +3256,7 @@ arbitrary_string # 自定义指定字符串，但可使用*作通配符。如：
 regular expression # 被指定的正则表达式模式匹配到的字符，要使用~开头，例如:      ~.*\.xiangzheng\.vip
 ```
 
-## 利用 referer 模块 实现防盗链
+### 利用 referer 模块 实现防盗链
 
 - 检查访问请求的referer信息是否有效来进行动作处理 从而实现实现防盗链功能
 - 由 ngx_http_referer_module 模块实现此功能
@@ -3285,9 +3285,9 @@ server {
 
 
 
-## 防盗链范例
+### 防盗链范例
 
-### 盗取远程主机图片
+#### 盗取远程主机图片
 
 ```bash
 #nginx配置
@@ -3312,7 +3312,7 @@ server {
 </html>
 ```
 
-### 被盗链主机截取日志
+#### 被盗链主机截取日志
 
 - 用户访问盗链主机的页面后，被盗链的主机会出现以下日志内容
   - **referer": "http://10.0.0.100/**
@@ -3323,7 +3323,7 @@ server {
 {"@timestamp": "27/Apr/2022:12:28:15 +0800","remote_addr": "10.0.0.1","referer": "http://10.0.0.100/","request": "GET /images/test.png HTTP/1.1","status": 200,"bytes": 49806,"agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36 Edg/100.0.1185.50","x_forwarded": "-","up_addr": "-","up_host": "-","up_resp_time": "-","request_time": "0.000" }
 ```
 
-### 被盗链主机实现防盗链
+#### 被盗链主机实现防盗链
 
 - 嵌入式变量 $invalid_referer 如果 Referer 请求头字段值被认为有效，则为空字符串，否则为 1，if语句块中$invalid_referer为空字符串即未赋值将不会执行action，反之赋值则会执行action
 
@@ -3342,15 +3342,15 @@ server {
 
 
 
-# 相关配置说明
+## 相关配置说明
 
-## listen
+### listen
 
 - 指定监听的端口号和IP地址，一般是80或443，也可以两个都指定
 
 
 
-## server_name
+### server_name
 
 - 定义虚拟主机的域名，用于匹配请求的HTTP Host头部。可以设置多个域名，使用空格分隔。
 
@@ -3358,7 +3358,7 @@ server {
 
 
 
-## root
+### root
 
 - 根目录
 - 网站默认的根目录，指定虚拟主机的根目录。当访问虚拟主机时，nginx会在该目录下查找对应的文件。
@@ -3366,13 +3366,13 @@ server {
 
 
 
-## alias
+### alias
 
 - 路径别名
 
 
 
-## index
+### index
 
 - 默认页面的文件名称，会从左到右依次寻找
 
@@ -3384,7 +3384,7 @@ location / {
 
 
 
-## autoindex
+### autoindex
 
 ```nginx
 location /images/ {
@@ -3394,7 +3394,7 @@ location /images/ {
 
 
 
-## sendfile
+### sendfile
 
 ```
 http {
@@ -3406,7 +3406,7 @@ http {
 
 
 
-## keepalive_timeout
+### keepalive_timeout
 
 - 设置回话保持时间
 
@@ -3420,7 +3420,7 @@ http {
 
 
 
-## include
+### include
 
 - 另外指定http配置段的其他配置文件位置
 
@@ -3432,7 +3432,7 @@ http {
 
 
 
-# 参考文档
+## 参考文档
 
 **第三方模块：**
 

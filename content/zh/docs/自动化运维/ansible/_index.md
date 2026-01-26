@@ -142,8 +142,6 @@ library = /usr/share/my_modules/ # 库文件存放目录
 remote_tmp = $HOME/.ansible/tmp # 临时py命令文件存放在远程主机目录
 local_tmp     = $HOME/.ansible/tmp # 本机的临时命令执行目录
 forks         = 5   # 默认并发数
-sudo_user     = root # 默认sudo 用户
-ask_sudo_pass = True # 每次执行ansible命令是否询问ssh密码
 ask_pass     = True   # 每次执行ansible命令是否询问ssh密码
 remote_port   = 22 # 默认远程链接主机的端口号（还可以在主机清单文件中对某主机单独指定端口）
 module_name = command   # 默认模块，可以修改为shell模块
@@ -172,8 +170,6 @@ library = /usr/share/my_modules/
 remote_tmp = $HOME/.ansible/tmp
 local_tmp     = $HOME/.ansible/tmp
 forks         = 5
-sudo_user     = root
-ask_sudo_pass = True
 ask_pass     = True
 remote_port   = 22
 module_name = shell
@@ -234,7 +230,7 @@ es_data
 
 
 
-# Ansible 相关工具
+## Ansible 相关工具
 
 ```bash
 /usr/bin/ansible # 主程序，临时命令执行工具
@@ -252,7 +248,7 @@ es_data
 /usr/bin/ansible-galaxy # 下载/上传优秀代码或Roles模块的官网平台
 ```
 
-## Ansible 命令行
+### Ansible 命令行
 
 ```sh
 # 让命令输出成为一行一行的
@@ -262,19 +258,19 @@ ansible servers -m ping -o
 ansible 172.16.30.112,172.16.30.113 -m ...
 ```
 
-## ansible
+### ansible
 
 - 此工具通过ssh协议，实现对远程主机的配置管理、应用部署、任务执行等功能
 
 - 使用前要与对端建立ssh免密登录，否则敲密码效率太低（ansible控制端公钥 推送到 被控制端）
 
-### 语法
+#### 语法
 
 ```bash
 ansible <host-pattern> [-m module_name] [-a args]
 ```
 
-#### host-pattern
+##### host-pattern
 
 - 正常写法
 
@@ -345,7 +341,7 @@ ansible "websrvs:dbsrvs" –m ping
 ansible "~(web|db).*\.magedu\.com" –m ping
 ```
 
-#### options
+##### options
 
 ```sh
 --version              # 显示版本
@@ -362,7 +358,7 @@ ansible "~(web|db).*\.magedu\.com" –m ping
 -K, --ask-become-pass  # 提示输入sudo时的口令
 ```
 
-### 范例
+#### 范例
 
 ```sh
 # 列出所有的主机列表
@@ -393,7 +389,7 @@ ansible all -m ping -u wang -k -b --become-user=mage
 ansible all -m command  -u wang -a 'ls /root' -b --become-user=root -k -K
 ```
 
-### 其他说明
+#### 其他说明
 
 **ansible命令执行过程：**
 
@@ -449,7 +445,7 @@ ansible all -m command  -u wang -a 'ls /root' -b --become-user=root -k -K
 ````
 
 
-## ansible-doc
+### ansible-doc
 
 - ansible-doc 命令可以查看模块的帮助信息等
 - `ansible-doc [options] [module...]`
@@ -467,17 +463,17 @@ ansible-doc -s  ping
 
 
 
-## ansible-playbook
+### ansible-playbook
 
 - 此工具用于执行编写好的 playbook 任务
 
-### 语法
+语法
 
 ```sh
 ansible-playbook <filename.yml> ... [options]
 ```
 
-#### options
+options
 
 ```sh
 -C --check   # 只检测可能会发生的改变，但不真正执行操作
@@ -489,7 +485,7 @@ ansible-playbook <filename.yml> ... [options]
 --syntax-check # 检查剧本的YAML语法
 ```
 
-### 范例
+范例
 
 ```yaml
 # cat hello.yaml
@@ -507,12 +503,12 @@ ansible-playbook <filename.yml> ... [options]
 
 
 
-## ansible-vault
+### ansible-vault
 
 - 此工具可以用于加密解密yml文件
 - 多用于yaml清单中包含不便于明文展示数据的场景
 
-### 语法
+语法
 
 ```sh
 ansible-vault [create|decrypt|edit|encrypt|rekey|view] hello.yml
@@ -525,7 +521,7 @@ rekey # 修改口令
 create # 创建新文件
 ```
 
-### 范例
+范例
 
 ```sh
 # 加密前
@@ -567,11 +563,11 @@ Decryption successful
 
 
 
-## ansible-console
+### ansible-console
 
 - 此工具可交互执行命令，支持tab
 
-### 语法
+语法
 
 - 提示符格式：
 
@@ -588,7 +584,7 @@ Decryption successful
 列出所有的内置命令： ?或help
 ```
 
-### 范例
+范例
 
 ```sh
 [root@ansible ~]#ansible-console
@@ -616,11 +612,11 @@ root@appsrvs (2)[f:5]$ service name=httpd state=started
 
 
 
-## ansible-galaxy
+### ansible-galaxy
 
 - 此工具会连接 https://galaxy.ansible.com 下载相应的roles
 
-### 范例
+范例
 
 ```sh
 # 列出所有已安装的galaxy
@@ -636,20 +632,13 @@ ansible-galaxy remove geerlingguy.redis
 
 
 
-# Ansible 常用模块
-
+## Ansible 常用模块
 - 常用模块帮助文档参考： https://docs.ansible.com/ansible/latest/modules/modules_by_category.html
+- 注意：能用专用模块就用专用模块，因为专用模块具有幂等性。例如：虽然使用linux命令同样也可以实现对文件的管理，但如果多次执行可能带来意外的效果。而使用Copy模块就不会存在这个问题，因为幂等性可以实现执行1次和执行N次的效果是一样的
 
-## 注意实现
-
-- 能用专用模块就用专用模块，因为专用模块具有幂等性
-  - 例如：虽然使用linux命令同样也可以实现对文件的管理，但如果多次执行可能带来意外的效果。而使用Copy模块就不会存在这个问题，因为幂等性可以实现执行1次和执行N次的效果是一样的
-
-## Ping
+### ping
 
 - 测试与远程主机的连通性
-
-### 范例
 
 ```sh
 [root@ansible ~]# ansible dbs -m ping
@@ -676,13 +665,9 @@ ansible-galaxy remove geerlingguy.redis
 }
 ```
 
-
-
-## Command
+### command
 
 - **注意：**此模块有很多缺陷，如：此命令不支持 $VARNAME < > | ; & 等，**可以用shell模块实现**
-
-### 范例
 
 ```bash
 [root@ansible ~]# ansible all -a hostname
@@ -704,7 +689,7 @@ localhost.localdomain
 
 
 
-## Shell
+### shell
 
 - 比command模块更好用，对shell命令的支持更好
 
@@ -715,9 +700,6 @@ localhost.localdomain
   复杂命令，即使使用shell也可能会失败
 
   - **解决办法：**写到脚本时，copy到远程，执行，再把需要的结果拉回执行命令的机器
-  
-
-### 范例
 
 ```bash
 # command删除不了的 shell命令可以删除
@@ -734,11 +716,10 @@ localhost.localdomain
 
 
 
-## Script
+### script
 
 - 在远程主机上运行ansible主机本地的脚本（本地的脚本无需添加执行权限）
 
-### 范例
 
 ```sh
 [root@ansible ~]# cat test.sh 
@@ -787,7 +768,7 @@ echo "hello world"
 
 
 
-## Copy
+### copy
 
 - 从ansible服务器主控端复制文件到远程主机
 
@@ -799,8 +780,6 @@ owner # 设置所有者
 mode # 设置权限
 content # 直接生成文件内容
 ```
-
-### 范例
 
 ```sh
 # 如目标存在，默认覆盖，此处指定先备份
@@ -819,7 +798,7 @@ ansible websrvs -m copy -a "src=/etc/ dest=/backup"
 
 
 
-## Fetch
+### fetch
 
 - 从远程主机提取文件至ansible的主控端，与 copy 模块的功能恰好相反，**目前不支持目录**
 
@@ -828,7 +807,6 @@ src # 远程主机的文件
 dest # 本地的目录
 ```
 
-### 范例
 
 ```sh
 [root@ansible ~]# ansible dbs -m fetch -a 'src=/opt/test.txt dest=./'
@@ -869,7 +847,7 @@ dest # 本地的目录
 
 
 
-## File
+### file
 
 - 管理远程主机的文件或目录（创建、删除、属性修改）
 
@@ -881,8 +859,6 @@ group #
 src #
 dest # 
 ```
-
-### 范例
 
 ```bash
 #创建文件
@@ -906,15 +882,13 @@ ansible dbs -m file -a 'src=/etc/passwd dest=/opt/passwd-link state=link'
 
 
 
-## Archive
+### archive
 
 - 打包压缩，结果会保存在被管理节点
 
 ```sh
 format # 压缩格式，支持bz2, gz, tar, xz, zip，默认gz
 ```
-
-### 范例
 
 - 将远程主机的/var/log目录压缩到/opt/log.tar.gz，压缩格式为gz，并将压缩后的文件所有者设为nobody，权限设为000
 
@@ -953,7 +927,7 @@ total 1236
 
 
 
-## unarchive
+### unarchive
 
 - 解包、解压缩
 
@@ -980,7 +954,6 @@ owner # 设置解压后的文件所有者
 group # 设置解压后的文件所属组
 ```
 
-### 范例
 
 - 将远程主机中的/opt/etc.gz压缩文件解压到~/家目录中，并设置权限为400
 
@@ -1016,11 +989,9 @@ ansible all -m unarchive -a 'src=https://example.com/example.zip dest=/data copy
 
 
 
-## Hostname
+### hostname
 
 - 管理主机名，通常都是**针对某一台机器来设置，以免所有机器都改成相同的主机名**
-
-### 范例
 
 ```sh
 [root@ansible ~]# ansible dbs -a 'hostname'
@@ -1046,7 +1017,7 @@ dbserver
 
 
 
-## Cron
+### cron
 
 - 定义计划任务
 
@@ -1064,7 +1035,6 @@ name # 计划任务的名字（体现在计划任务的备注上）
 state=absent # 删除
 ```
 
-### 范例
 
 - 每周一至周五的凌晨2点30分执行备份脚本
 
@@ -1113,11 +1083,10 @@ ansible websrvs -m cron -a 'state=absent name=Synctime'
 
 
 
-## Yum
+### yum
 
 - 管理软件包，只支持RHEL，CentOS，fedora，不支持Ubuntu其它版本
 
-### 范例
 
 - 安装包
 
@@ -1139,17 +1108,17 @@ ansible websrvs -m yum -a 'name=httpd state=absent'
 
 
 
-## Apt
+### apt
 
 - 管理软件包，只支持Ubuntu等相关分支版本
 
 
 
-## Service
+### service
 
 - 管理服务
 
-### 范例
+
 
 - 启动 httpd 服务，并将其设为开机自启动
 
@@ -1179,7 +1148,7 @@ ansible all -m service -a 'name=httpd state=restarted'
 
 
 
-## User
+### user
 
 - 管理用户
 
@@ -1193,7 +1162,7 @@ home=/data/mysql
 create_home=no  
 ```
 
-### 范例
+
 
 - 创建用户
 
@@ -1216,11 +1185,11 @@ ansible all -m user -a 'name=nginx state=absent remove=yes'
 
 
 
-## Group
+### group
 
 - 管理组
 
-### 范例
+
 
 - 创建组
 
@@ -1236,13 +1205,12 @@ ansible websrvs -m group  -a 'name=nginx state=absent'
 
 
 
-## Lineinfile
+### lineinfile
 
 - 相当于sed，可以修改文件内容
 
 - ansible在使用sed进行替换时，经常会遇到需要转义的问题，而且ansible在遇到特殊符号进行替换时，存在问题，无法正常进行替换 。其实在ansible自身提供了两个模块：lineinfile模块和replace模块，可以方便的进行替换
 
-### 范例
 
 - 1
 
@@ -1288,7 +1256,7 @@ ansible websrvs -m lineinfile -a "path=/etc/httpd/conf/httpd.conf regexp='^Liste
 
 
 
-## Replace
+### replace
 
 - **建议使用**，该模块有点类似于sed命令，主要也是基于正则进行匹配和替换
 
@@ -1298,7 +1266,7 @@ regexp # 匹配的正则表达式
 replace # 替代的值
 ```
 
-### 范例
+
 
 - 1
 
@@ -1345,11 +1313,11 @@ ansible all -m replace -a "path=/etc/fstab regexp='^#(.*)' replace='\1'"
 
 
 
-## Setup
+### setup
 
 - setup 模块来收集主机的系统信息，这些 facts 信息可以直接以变量的形式使用
 
-### 范例
+
 
 - 显示主机的所有信息
 

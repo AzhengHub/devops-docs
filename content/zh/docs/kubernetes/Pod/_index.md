@@ -1,35 +1,10 @@
 ---
-title: "Pod管理"
+title: "Pod"
 weight: 10
 ---
 
-# Pod 概述
 
-- **pod 是 k8s 中的最小单元**
-
-- **所有的容器均在Pod中运行，一个Pod可以承载一个或者多个相关的容器**
-
-- **一个 pod 中如果运行多个容器的话 那么这些容器是一起被调度的**
-
-- pod 的生命周期是短暂的，不会自愈，是用完就销毁的实体
-
-- 一般都是通过 Controller 来创建和管理 pod 的
-
-- pod 也就是作为应用负载的组件。 
-
-- PS：pod 翻译过来的意思就是豆荚，可以理解为豆荚中的豆粒就是一个一个的容器
-
-- 每个 Pod 中都会运行一个 pause 容器 它是所有容器的父进程 主要负责底层网络封装
-
-- Pod 还支持各种容器运行时，如：docker、containerd、podman等，1.24版本之前默认为docker，之后为 containerd。
-
-- **注意：**
-
-  - 重启 Pod 中的容器不应与重启 Pod 混淆。 Pod 不是进程，而是容器运行的环境。 在被删除之前，Pod 会一直存在。
-
-  - 当你为 Pod 对象创建清单时，要确保所指定的 Pod 名称是合法的 [DNS 子域名](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names#dns-subdomain-names)。
-
-
+## Pod 概述
 
 在 Kubernetes 中，Pod 是最小的调度单位，是一组紧密关联的容器集合，这些容器共享同一个网络命名空间、存储卷和主机，运行在一个节点上。Pod 可以包含一个或多个容器，这些容器可以共享存储卷、网络命名空间、PID 命名空间等资源，因此可以通过本地进程间通信来协作完成一个特定的任务。
 
@@ -37,307 +12,17 @@ Pod 作为 Kubernetes 最小的部署单元，通常包含一个主容器和一�
 
 Pod 提供了一种轻量级的抽象，可以让开发人员将多个容器组合在一起，并以原子方式部署和管理它们。通过将多个容器组合在一个 Pod 中，可以让它们可以方便地共享同一个环境，从而更加轻松地构建、部署和管理应用程序。
 
+**注意：**
+- 重启 Pod 中的容器不应与重启 Pod 混淆。 Pod 不是进程，而是容器运行的环境。 在被删除之前，Pod 会一直存在。
+- 当为 Pod 对象创建清单时，要确保所指定的 Pod 名称是合法的 [DNS 子域名](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names#dns-subdomain-names)。
 
+---
 
-# namespace
-
-Linux内核中的namespace技术允许用户将一组进程隔离在一个独立的命名空间内，以提供更多的隔离性和安全性。下面是Linux内核中支持的各种namespace类型：
-
-1. UTS namespace：隔离主机名和域名信息。
-2. PID namespace：隔离进程ID空间，使得一个namespace中的进程不能看到另一个namespace中的进程。
-3. Mount namespace：隔离文件系统挂载点，使得一个namespace中的进程不能访问另一个namespace中的文件系统。
-4. Network namespace：隔离网络设备、IP地址、路由信息等，使得一个namespace中的进程不能访问另一个namespace中的网络资源。
-5. IPC namespace：隔离命名的System V IPC对象和消息队列，使得一个namespace中的进程不能访问另一个namespace中的IPC对象。
-6. User namespace：隔离用户和组ID，使得一个namespace中的进程不能看到另一个namespace中的用户和组ID。
-
-注意：以上列举的各种namespace都是可选的，在不同的系统版本和内核配置中支持的namespace类型可能不同。
-
-
-
-# Pod 中多个容器共享与隔离的名称空间
-
-如果一个 Pod 中包含多个容器：
-- IPC、NET、UTS 共享
-
-- PID、MNT、USER 隔离
-
-**pod级别的共享控制参数：**
-
-- `ShareProcessNamespace` 默认是开启的，可以通过禁用：`--feature-gates=PodShareProcessNamespace=false`
-
-
-
-## 范例：
-
-```yaml
-# cat many-pod.yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: demoapp-busybox
-  namespace: default
-spec:
-  containers:
-  - name: demoapp
-    image: ikubernetes/demoapp:v1.0
-  - name: busybox 
-    image: busybox:uclibc
-    command: ["tail", "-f", "/etc/hosts"]
-
-
-# kubectl apply -f many-pod.yaml 
-
-
-# kubectl get pod
-NAME              READY   STATUS    RESTARTS   AGE
-demoapp-busybox   2/2     Running   0          3s
-```
-
-### IPC
-
-- 共享，Pod中的多个容器能够使用SystemV IPC或POSIX消息队列进行通信；
-- 所有容器共享同一个 IPC 机制，从而可以使用 SystemV IPC 和 POSIX 消息队列等方法进行通信。
-
-- **使用 nc 工具测试：**
-
-```sh
-# kubectl exec -it demoapp-busybox -c demoapp -- sh
-# 监听端口1234，作为服务端
-[root@demoapp-busybox /]# nc -l 1234
-
-
-# kubectl exec -it demoapp-busybox -c busybox -- sh
-/ # netstat -ntl
-Active Internet connections (only servers)
-Proto Recv-Q Send-Q Local Address           Foreign Address         State       
-tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      
-tcp        0      0 :::1234                 :::*                    LISTEN      
-# 作为客户端并输入hello
-/ # nc localhost 1234
-hello
-
-# 服务端可以收到
-[root@demoapp-busybox /]# nc -l -p 1234
-hello
-```
-
-- **使用 socat 工具测试：**
-
-```sh
-1
-```
-
-
-
-### NET
-
-- Network
-- 共享，所有容器共享一个网络栈，从而共享相同的 IP 地址和端口等。
-
-```sh
-# kubectl exec -it demoapp-busybox -c demoapp -- sh
-[root@demoapp-busybox /]# ip a
-1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
-    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
-    inet 127.0.0.1/8 scope host lo
-       valid_lft forever preferred_lft forever
-3: eth0@if20: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue state UP group default 
-    link/ether 4a:82:14:bb:2a:0b brd ff:ff:ff:ff:ff:ff link-netnsid 0
-    inet 10.244.1.114/24 brd 10.244.1.255 scope global eth0
-       valid_lft forever preferred_lft forever
-[root@demoapp-busybox /]# netstat -ntl
-Active Internet connections (only servers)
-Proto Recv-Q Send-Q Local Address           Foreign Address         State       
-tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN     
-
-
-
-# kubectl exec -it demoapp-busybox -c busybox -- sh
-/ # ip a
-1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue qlen 1000
-    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
-    inet 127.0.0.1/8 scope host lo
-       valid_lft forever preferred_lft forever
-3: eth0@if20: <BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN> mtu 1450 qdisc noqueue 
-    link/ether 4a:82:14:bb:2a:0b brd ff:ff:ff:ff:ff:ff
-    inet 10.244.1.114/24 brd 10.244.1.255 scope global eth0
-       valid_lft forever preferred_lft forever
-/ # netstat -ntl
-Active Internet connections (only servers)
-Proto Recv-Q Send-Q Local Address           Foreign Address         State       
-tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      
-
-
--------------
-# busybox容器监听端口后
-/ # nc -l -p 888
-
-# demoapp容器中也同样能看到
-[root@demoapp-busybox /]# netstat -ntl
-Active Internet connections (only servers)
-Proto Recv-Q Send-Q Local Address           Foreign Address         State       
-tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      
-tcp        0      0 :::888                  :::*                    LISTEN      
-```
-
-### UTS
-
-- 共享，Pod中的多个容器共享一个主机名；
-
-```sh
-# kubectl exec -it demoapp-busybox -c demoapp -- sh
-[root@demoapp-busybox /]# hostname
-demoapp-busybox
-[root@demoapp-busybox /]# cat /etc/hostname 
-demoapp-busybox
-[root@demoapp-busybox /]# echo $PS1
-[\u@\h \w]\$
-
-
-
-# kubectl exec -it demoapp-busybox -c busybox -- sh
-/ # hostname
-demoapp-busybox
-/ # cat /etc/hostname 
-demoapp-busybox
-/ # echo $PS1
-\w \$
-```
-
-### PID
-
-- 隔离，每个容器在 PID 命名空间中拥有独立的进程树，它们互相隔离。
-
-```yaml
-# kubectl exec -it demoapp-busybox -c demoapp -- sh
-[root@demoapp-busybox /]# ps aux
-PID   USER     TIME  COMMAND
-    1 root      0:00 python3 /usr/local/bin/demo.py
-    7 root      0:00 sh
-   15 root      0:00 ps aux
-
-
-
-# kubectl exec -it demoapp-busybox -c busybox -- sh
-/ # ps aux
-PID   USER     TIME  COMMAND
-    1 root      0:00 tail -f /etc/hosts
-    6 root      0:00 sh
-   14 root      0:00 ps aux
-```
-
-### MNT
-
-- Mount
-- 隔离，MNT 提供磁盘挂载点和文件系统的隔离能力，但如果遇到需要收集日志等情况可以通过挂载同一个存储卷来解决，因为存储卷是不会隔离的（储存卷是Pod级别）。
-
-```sh
-# kubectl exec -it demoapp-busybox -c demoapp -- sh
-[root@demoapp-busybox /]# ls -l /usr/local/bin/demo.py
--rwxr-xr-x    1 root     root          2687 Mar 21  2020 /usr/local/bin/demo.py
-
-
-# kubectl exec -it demoapp-busybox -c busybox -- sh
-/ # ls -l /usr/local/bin/demo.py
-ls: /usr/local/bin/demo.py: No such file or directory
-```
-
-### User
-
-- 隔离，User隔离用户和组ID，使得一个namespace中的进程不能看到另一个namespace中的用户和组ID。
-
-```sh
-# kubectl exec -it demoapp-busybox -c demoapp -- sh
-[root@demoapp-busybox /]# id
-uid=0(root) gid=0(root) groups=0(root),1(bin),2(daemon),3(sys),4(adm),6(disk),10(wheel),11(floppy),20(dialout),26(tape),27(video)
-[root@demoapp-busybox /]# cat /etc/passwd 
-root:x:0:0:root:/root:/bin/ash
-bin:x:1:1:bin:/bin:/sbin/nologin
-daemon:x:2:2:daemon:/sbin:/sbin/nologin
-adm:x:3:4:adm:/var/adm:/sbin/nologin
-lp:x:4:7:lp:/var/spool/lpd:/sbin/nologin
-sync:x:5:0:sync:/sbin:/bin/sync
-shutdown:x:6:0:shutdown:/sbin:/sbin/shutdown
-halt:x:7:0:halt:/sbin:/sbin/halt
-mail:x:8:12:mail:/var/mail:/sbin/nologin
-news:x:9:13:news:/usr/lib/news:/sbin/nologin
-uucp:x:10:14:uucp:/var/spool/uucppublic:/sbin/nologin
-operator:x:11:0:operator:/root:/sbin/nologin
-man:x:13:15:man:/usr/man:/sbin/nologin
-postmaster:x:14:12:postmaster:/var/mail:/sbin/nologin
-cron:x:16:16:cron:/var/spool/cron:/sbin/nologin
-ftp:x:21:21::/var/lib/ftp:/sbin/nologin
-sshd:x:22:22:sshd:/dev/null:/sbin/nologin
-at:x:25:25:at:/var/spool/cron/atjobs:/sbin/nologin
-squid:x:31:31:Squid:/var/cache/squid:/sbin/nologin
-xfs:x:33:33:X Font Server:/etc/X11/fs:/sbin/nologin
-games:x:35:35:games:/usr/games:/sbin/nologin
-cyrus:x:85:12::/usr/cyrus:/sbin/nologin
-vpopmail:x:89:89::/var/vpopmail:/sbin/nologin
-ntp:x:123:123:NTP:/var/empty:/sbin/nologin
-smmsp:x:209:209:smmsp:/var/spool/mqueue:/sbin/nologin
-guest:x:405:100:guest:/dev/null:/sbin/nologin
-nobody:x:65534:65534:nobody:/:/sbin/nologin
-[root@demoapp-busybox /]# id ntp
-uid=123(ntp) gid=123(ntp) groups=123(ntp)
-
-
-
-
-# kubectl exec -it demoapp-busybox -c busybox -- sh
-/ # ps aux
-PID   USER     TIME  COMMAND
-    1 root      0:00 tail -f /etc/hosts
-    6 root      0:00 sh
-   14 root      0:00 ps aux
-/ # id
-uid=0(root) gid=0(root) groups=10(wheel)
-/ # cat /etc/passwd 
-root:x:0:0:root:/root:/bin/sh
-daemon:x:1:1:daemon:/usr/sbin:/bin/false
-bin:x:2:2:bin:/bin:/bin/false
-sys:x:3:3:sys:/dev:/bin/false
-sync:x:4:100:sync:/bin:/bin/sync
-mail:x:8:8:mail:/var/spool/mail:/bin/false
-www-data:x:33:33:www-data:/var/www:/bin/false
-operator:x:37:37:Operator:/var:/bin/false
-nobody:x:65534:65534:nobody:/home:/bin/false
-/ # id ntp
-id: unknown user ntp
-```
-
-
-
-
-
-
-
-# pause 容器
-
-- 在 Kubernetes 中，pause 容器作为 pod 中所有容器的父容器，主要负责底层网络封装
-
-![pause](pause.png)
-
-- 假设现在有一个 Pod，它包含两个容器（A 和 B），K8S 是通过让他们加入（join）另一个第三方容器的 network namespace 实现的共享，而这个第三方容器就是 pause 容器。
-
-- 没有 pause 容器，那么 A 和 B 要共享网络，要不就是 A 加入 B 的 network namespace，要嘛就是 B 加入 A 的 network namespace， 而无论是谁加入谁，只要 network 的 owner 退出了，该 Pod 里的所有其他容器网络都会立马异常，这显然是不合理的。
-- 我们在同一 Pod 里所有容器里看到的网络视图，都是完全一样的，包括网络设备、IP 地址、Mac 地址等等，因为他们其实全是同一份，而这一份都来自于 Pod 第一次创建的这个 Infra container（pause)
-
-
-
-
-
-
-
-# 静态 Pod
-
+### 静态 Pod
 - 静态 Pod 指的是无需手动创建，而是由 kubelet 自行加载创建的 Pod；
-- 像 apiserver、controller-manager、scheduler、etcd 这种Pod都属于静态Pod
-
-**以 kubeadm 方式部署集群时 Master 节点默认的静态 Pod 清单：**
-
+- /etc/kubernetes/manifests 是 Kubelet 的 静态 Pod 目录。任何放入该目录的 YAML 文件，都会被该节点上的 Kubelet 守护进程自动扫描并启动为 Pod，不受 API Server 调度控制。
 ```sh
-# 注意！由于此目录下的文件被kubelet所监视，所以一旦kubelet发现文件有改变则会重载pod，文件时间戳修改也会触发pod重载？
+# kubelet 会定期查询这些文件的哈希值是否有变化，如果有变化则会重新加载该文件并创建对应的 Pod。
 root@k8s-master-1:~# ls -l /etc/kubernetes/manifests/
 total 16
 -rw------- 1 root root 2298 Sep 13 00:01 etcd.yaml
@@ -346,17 +31,48 @@ total 16
 -rw------- 1 root root 1476 Sep 13 00:01 kube-scheduler.yaml
 ```
 
+---
+
+### pause 容器
+- 在 Kubernetes 中，pause 容器作为 pod 中所有容器的父容器，主要负责底层网络封装；
+- 如果没有 pause 容器，当一个 Pod 里的业务容器 A 重启时，Pod 的网络命名空间（IP 地址、MAC 地址等）可能会随之消失或重置。为了保证 Pod 作为一个整体的稳定性，Kubernetes 引入了 pause 容器。
+
+**核心职责：**
+1. 作为网络命名空间的基础：pause 容器启动后会持有网络命名空间（Network Namespace）。Pod 里的其他业务容器通过 container 模式加入到 pause 容器的网络空间中。
+2. 作为 PID 1 进程管理僵尸进程：在 Linux 中，如果父进程退出了，子进程会被 PID 为 1 的进程接管。pause 容器里的进程（通常是用 C 语言编写的极简程序）扮演了 PID 1 的角色，负责回收 Pod 内产生的僵尸进程。
+
+
+**工作原理，当创建 Pod 时：**
+1. Kubelet 调用容器运行时（如 Containerd 或 Docker），优先启动一个 pause 容器。
+2. pause 容器初始化网络、IPC（进程间通信）和 UTS（主机名）等命名空间；
+3. 随后启动的业务容器（如 Nginx、MySQL）会共享 pause 容器的网络栈。这意味着，Pod 里的所有容器：
+  - 共享同一个 IP 地址（即 pause 容器的 IP）。
+  - 通过 localhost 互相通信（就像在同一台物理机上一样）。
+
+
+### Pod 与 Namespace
+
+如果一个 Pod 中包含多个容器：
+
+| 命名空间 | 默认状态 | 备注 |
+| --- | --- | --- |
+| **NET** | **共享** | 所有容器共享同一个 IP、端口范围和路由表。它们可以通过 localhost 通信 |
+| **IPC** | **共享** | 容器间可以通过信号量、共享内存等标准 Unix IPC 机制通信 |
+| **UTS** | **共享** | 所有容器共享同一个主机名（Hostname）|
+| **MNT** | **隔离** | 每个容器都有独立的文件系统。虽然可以通过 volume 挂载共享数据，但挂载点和文件系统视图是各自独立的。 |
+| **USER** | **隔离** | 每个容器都有独立的用户和组ID，互相看不到对方的用户和组。 |
+| **PID** | **默认隔离** | 默认情况下 Pod 里的容器看不到其他容器的进程（容器 A 里的 ps -ef 看不到容器 B 的进程）。可通过 `shareProcessNamespace: true` 改为共享（此时 pause 容器将正式承担起 PID 1 的职责，负责回收所有容器产生的僵尸进程）。 |
 
 
 
 
 
+## Pod 控制器
+- Pod 如果未被控制器管理，它的生命周期将受到 kubelet 的控制，并且 Pod 在删除后不会自动重建。
 
+## ==========================
 
-
-# Pod 相关命令
-
-
+## Pod 相关命令
 
 **查看 Pod**
 
@@ -410,7 +126,7 @@ wordpress-647f56d5c-8jwx6   2/2     Terminating   0          21h   10.244.1.27  
 
 
 
-# Pod states
+## Pod states
 
 **Pod 的状态是由 Pod 中的容器状态（container states）共同决定的，而不是单个容器的状态**。如果 Pod 中的任何容器出现错误，Pod 的状态将被设置为 Failed。相反，如果所有容器都运行正常，则 Pod 的状态为 Running。此外，Pending 状态可能是由于调度问题（如节点资源不足），因此它不仅仅是一个阶段，而是一个状态。
 
@@ -443,7 +159,7 @@ wordpress-647f56d5c-8jwx6   2/2     Terminating   0          21h   10.244.1.27  
 
 
 
-# Pod phase
+## Pod phase
 
 参考文档：https://kubernetes.io/zh-cn/docs/concepts/workloads/pods/pod-lifecycle/
 
@@ -462,15 +178,7 @@ Pod 的 phase 表示 Pod 的生命周期阶段，不同于 Pod 的状态。
 
 
 
-
-
-
-
-
-
-
-
-# Pod 创建过程
+## Pod 创建过程
 
 1. 首先创建 Pod 的 yaml 文件信息 会发送给 API Server 并写入到 etcd 中
 2. 然后 controller-manager 会 watch API Server，发现有 Pod 创建请求后，会创建一个 Pod 资源对象，然后将 pod 配置存储在 etcd，此时 pod 状态会变成 Pending 等待被调度
@@ -483,103 +191,6 @@ Pod 的 phase 表示 Pod 的生命周期阶段，不同于 Pod 的状态。
 5. Node 节点的 kubeproxy
 6. 最后 Node 节点的 kubelet 将 Pod 状态、IP等信息上报 API Server；API Server 更新 etcd 中 Pod 信息，并设置 Pod 状态为running，此时Pod就已经创建完成。
 7. 后期 Node 节点的 kubelet 会定期向 etcd 发起查询，查询 Pod 是否需要更新等操作
-
-
-
-# Pod 生命周期
-
-**从上到下表示时间轴从开始到结束：**
-
-- **Init Containers**
-  - 初始化容器，如果其中存在多个容器，则容器默认是**串行**启动的；初始化完成后会进入到 Terminated 状态之后会运行 containers
-    - 假设初始化容器中有两个容器，则先运行容器一，容器一运行完毕退出后，再运行容器二，最后运行正式容器）
-
-**以下属于 main container**
-
-- **Containers**
-  - 如果其中存在多个容器，则容器默认是**并行**启动的，即无法控制启动的先后顺序
-- **Post Start Hook**
-  - 启动后钩子，一般在容器启动后做一些简单的初始化工作（只有启动后钩子执行成功 容器才会变成 running 状态
-- **Startup Probe**
-  - 启动后执行一次
-- **Readiness Probe**
-  - 周期性执行
-- **liveness Probe**
-  - 周期性执行
-- **Pre Stop Hook**
-  - 停止前钩子，一般在容器停止前做一些清理操作（只有停止前钩子执行成功 容器才会正常停止）
-
-
-
-
-
-
-
-# Pod 服务质量类别
-
-QoS Class 代表了Pod的资源被优先满足的类别
-
-- **Guaranteed**：
-  - Pod内的**每个容器**都分别设定了CPU和Memroy资源需求和资源限制，CPU的需求与限制相等，而且Memory的需求与限制也相等； 
-  - 优先满足
-
-- **Bustable**：
-  - 设置了一个限制，或设置了部分限制
-  - 两者之间；
-
-- **BestEffort**：
-  - 未为任何一个容器设定任何需求或限制； 
-  - 尽力满足
-
-
-```yaml
-# kubectl describe pod sidecar-container-demo
-...
-QoS Class:                   BestEffort
-...
-```
-
-
-
-
-
-qosClass 表示服务质量类型（Quality of Service），这个字段是根据请求的内存和 CPU 来进行确定的。
-
-其中包含三种类型：Guaranteed，Burstable 和 BestEffort。
-
-其中这三种策略在由于资源不足而驱逐 Pod 时，有不同的优先级。
-
-可以简单理解先驱逐 BestEffort，再 Burstable，最后是 Guaranteed。
-
-
-
-```sh
-# kubectl get pod demoapp-busybox -o json | jq .status.qosClass
-"BestEffort"
-
-# kubectl  get pod -n kube-system etcd-k8s-master-1 -o json | jq .status.qosClass
-"Burstable"
-
-# 如何使用jq取resources字段？
-# kubectl  get pod -n kube-system etcd-k8s-master-1 -o json | jq .spec.containers[.resources]
-jq: error (at <stdin>:206): Cannot index array with null
-
-```
-
-
-
-
-
-在Kubernetes中，QoS（Quality of Service）是一种策略，用于确保集群资源可用性并避免应用程序出现崩溃或性能问题。QoS可以根据容器的资源需求和使用情况，将容器划分为三个等级：Guaranteed、Burstable和Best Effort。
-
-QoS Class是一个标识符，用于表示Kubernetes中容器的QoS等级。每个容器都有一个QoS Class，根据容器请求的资源（CPU、内存等）和集群中的资源使用情况来确定。QoS Class包括以下三种类型：
-
-- Guaranteed：保证类Pod是具有最高优先级的Pod，它们被分配了容器请求的所有资源，并且不能超出这些限制。如果在资源紧张的情况下无法满足Guaranteed容器的请求，则Kubernetes会将其它QoS Class的容器终止，以确保Guaranteed容器可以正常运行。
-- Burstable：可突发类Pod是允许共享节点资源的Pod，但是它们需要在节点上空闲资源不足时限制资源使用。当节点上的资源使用率增加时，这些Pod的资源分配可能会被限制。
-- Best Effort：尽力而为类Pod是最不重要的Pod，它们只被分配了剩余的资源，并且在资源紧张时可能会被终止，以便给更重要的Pod腾出空间。
-
-通过使用QoS类别，Kubernetes可以为容器提供适当的资源，并避免资源紧张的情况下容器运行失败。
-
 
 
 # Pod 中容器的设计模式
