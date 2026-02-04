@@ -1,5 +1,5 @@
 ---
-title: "Pod自动扩缩容"
+title: "Pod 自动扩缩容"
 weight: 10
 ---
 

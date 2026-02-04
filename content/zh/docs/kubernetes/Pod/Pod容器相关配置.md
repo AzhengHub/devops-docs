@@ -1,5 +1,5 @@
 ---
-title: "Pod 配置详解"
+title: "Pod 容器相关配置"
 ---
 
 ## 最小的 Pod 配置文件
@@ -287,7 +287,7 @@ spec:
 K8s 根据 Pod 中容器对 CPU 和内存的 Requests (请求值) 和 Limits (限制值) 的配置情况，自动将 Pod 划分为以下三个等级，这三种等级在由于资源不足而驱逐 Pod 时，有不同的优先级（优先级从高到低）：
 1. Guaranteed (完全保障型)：这是最高优先级的 Pod。系统会确保它获得所请求的资源，且除非系统本身崩溃，否则不会被轻易驱逐。
     - 配置条件：Pod 中所有容器的所有资源（CPU 和内存）都必须设置了 requests 和 limits。且每个资源的 requests 必须等于 limits。
-    - 特点：极其稳定，就像“一等座”，只要火车还在开，你的位子就是你的。
+    - 特点：极其稳定，就像“一等座”，只要火车还在开，的位子就是的。
 
 2. Burstable (弹性伸缩型)：这是最常见的类型。Pod 至少有一个最低资源保障，但在系统空闲时可以“超载”使用更多资源。
     - 配置条件：`requests` 小于 `limits`。
@@ -295,7 +295,7 @@ K8s 根据 Pod 中容器对 CPU 和内存的 Requests (请求值) 和 Limits (�
 
 3. BestEffort (尽力型)：完全不写 `resources`。
     - 配置条件：Pod 中任何一个容器都没有设置 requests 或 limits。
-    - 特点：像“挂票”，系统有富余资源就给你用，一旦资源稍微紧张，这类 Pod 首当其冲会被第一个杀掉。
+    - 特点：像“挂票”，系统有富余资源就给用，一旦资源稍微紧张，这类 Pod 首当其冲会被第一个杀掉。
 
 **总结对比表：**
 
@@ -318,32 +318,62 @@ kubectl get pods -A -o custom-columns="NAMESPACE:.metadata.namespace,NAME:.metad
 ```
 ---
 
-
 ## 容器生命周期
-
-**从上到下表示时间轴从开始到结束：**
-
-- **Init Containers**
-  - 初始化容器，如果其中存在多个容器，则容器默认是**串行**启动的；初始化完成后会进入到 Terminated 状态之后会运行 containers
-    - 假设初始化容器中有两个容器，则先运行容器一，容器一运行完毕退出后，再运行容器二，最后运行正式容器）
-
-**以下属于 main container**
-
-- **Containers**
-  - 如果其中存在多个容器，则容器默认是**并行**启动的，即无法控制启动的先后顺序
-- **Post Start Hook**
-  - 启动后钩子，一般在容器启动后做一些简单的初始化工作（只有启动后钩子执行成功 容器才会变成 running 状态
-- **Startup Probe**
-  - 启动后执行一次
-- **Readiness Probe**
-  - 周期性执行
-- **liveness Probe**
-  - 周期性执行
-- **Pre Stop Hook**
-  - 停止前钩子，一般在容器停止前做一些清理操作（只有停止前钩子执行成功 容器才会正常停止）
+一个 Pod 完整的生命周期顺序如下：
+1. **Init Containers 1**（启动 -> 运行 -> 成功退出）
+2. **Init Containers 2**（...以此类推）
+3. **主容器启动** 与 **PostStart 钩子** 同时触发。
+4. **Startup Probe（启动探针）** 开始探测。
+5. **Startup Probe 成功**，此探针永久退出。
+6. **Liveness & Readiness Probe** 开始周期性探测。
+7. （运行期间...）
+8. **收到删除指令**，**PreStop 钩子** 触发。
+9. **PreStop 完成**，发送 **SIGTERM** 信号给主进程。
+10. **宽限期结束** 或 **进程退出**，容器销毁。
 
 ### 初始化容器
+Init Container 是一种特殊的容器，它在 Pod 的主容器启动之前运行。
 
+**核心特性：**
+- **顺序执行**：如果定义了多个 Init Container，它们会按顺序**串行**运行。
+- **阻塞启动**：只有当前一个 Init Container 成功退出（Exit Code 0），下一个才会开始。只有全部成功，主容器才会启动。
+    - 但主容器是并行启动的，即无法控制启动的先后顺序。
+- **独立镜像**：它可以拥有与主容器完全不同的镜像和工具（例如主容器只有运行时，Init 容器可以带 `curl`、`sed` 等工具）。
+
+Init Container 配置示例：
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: init-demo
+spec:
+  # 1. 初始化容器段
+  initContainers:
+  - name: install-tool
+    image: busybox:1.28
+    command: ['wget', '-O', '/work-dir/index.html', 'http://info.cern.ch']
+    volumeMounts:
+    - name: workdir
+      mountPath: /work-dir
+
+  # 2. 主容器段
+  containers:
+  - name: main-app
+    image: nginx:1.21
+    volumeMounts:
+    - name: workdir
+      mountPath: /usr/share/nginx/html
+  
+  volumes:
+  - name: workdir
+    emptyDir: {}
+```
+
+初始化容器常见场景：
+- **依赖等待**：比如应用启动前必须确保 MySQL 已经就绪。
+    - *Init 容器逻辑*：`until nslookup mysql; do sleep 2; done;`
+- **环境预处理**：主容器镜像为了安全通常是 `distroless`（无 shell）的，可以用 Init 容器去修改文件权限 (`chmod`) 或生成配置文件。
+- **敏感信息处理**：在 Init 容器里解密证书，把明文存入 `emptyDir` 共享卷给主容器使用，这样主容器进程就不需要掌握解密密钥。 
 
 ### 健康检查探针
 三种探针的综合配置示例：
@@ -398,8 +428,11 @@ spec:
 **HTTP GET**，向容器发 HTTP 请求（状态码 200-399 算成功）：
 ```yaml
       httpGet:
-        path: /healthz
-        port: 8080
+        path <string> # 访问 HTTP 服务的路径。默认值为 "/"。可以定义专用于检测的路径 但要注意后期更新镜像时此路径需存在 否则会因为探测不到而导致 Pod 无法正常运行
+        port <string> -required- # 访问容器的端口号或者端口名，名称必须是IANA_SVC_NAME
+        host <string> # 连接使用的主机名，默认是 Pod 的 IP。也可以在 HTTP 头中设置 “Host” 来代替。
+        scheme <string> # 用于设置连接主机的方式（HTTP 还是 HTTPS）。默认是 "HTTP"。
+        httpHeaders	<[]Object> # 请求中自定义的 HTTP 头。HTTP 头字段允许重复。
 ```
 **TCP Socket**，只要端口能通就观测成功：
 ```yaml
@@ -436,8 +469,8 @@ spec:
 
 #### 注意事项与最佳实践
 1. **Readiness vs Liveness 区分**：如果数据库连不上了，应用应该 **Readiness 失败**（断开流量，等会儿可能好），而不是 **Liveness 失败**（疯狂重启应用并不能修好数据库，反而可能引发雪崩）。
-2. **避免检查外部依赖**：探针脚本里**不要**去 `curl` 外部 API 或数据库。如果外部挂了，你集群里成百上千个 Pod 同时重启/掉线，后果不堪设想。探针只应检查容器“自身”的状态。
-3. **超时时间设置 (`timeoutSeconds`)**：默认是 1 秒。如果你的接口响应较慢，一定要调大这个值，否则会因为超时导致误杀。
+2. **避免检查外部依赖**：探针脚本里**不要**去 `curl` 外部 API 或数据库。如果外部挂了，集群里成百上千个 Pod 同时重启/掉线，后果不堪设想。探针只应检查容器“自身”的状态。
+3. **超时时间设置 (`timeoutSeconds`)**：默认是 1 秒。如果的接口响应较慢，一定要调大这个值，否则会因为超时导致误杀。
 4. **接口解耦**：建议应用专门提供 `/healthz`、`/ready` 等轻量级接口，不要直接检查业务逻辑复杂的接口。
 5. **探针的检查频率：**
     - 设置长周期的 `startupProbe`：针对启动慢的应用，给够失败次数（比如 30 次 * 10 秒），防止应用还没起来就被杀掉。
@@ -456,6 +489,8 @@ kind: Pod
 metadata:
   name: lifecycle-demo
 spec:
+  # 优雅停机时间，给应用留出处理存量请求和关闭连接的时间，停止前钩子的执行时间不能超过这个值，否则会被强制终止。
+  terminationGracePeriodSeconds: 30
   containers:
   - name: app-container
     image: nginx:1.21

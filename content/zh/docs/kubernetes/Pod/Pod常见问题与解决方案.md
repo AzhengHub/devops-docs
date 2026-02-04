@@ -1,5 +1,5 @@
 ---
-title: "Pod常见问题与解决方案"
+title: "Pod 常见问题与解决方案"
 ---
 
 ## Pod 一直处于 Terminating 状态无法删除
