@@ -1,13 +1,14 @@
 ---
 title: "Helm"
-weight: 10
 ---
 
-- 
+## helm 概述
+参考文档：https://helm.sh/zh/docs/helm/helm/
 
-# helm 相关文件
 
-## $HOME/.cache/helm/repository
+## helm 相关文件
+
+### $HOME/.cache/helm/repository
 
 - 此目录是更新chart仓库索引信息后自动生成的相关文件
 
@@ -20,7 +21,7 @@ prometheus-community-index.yaml
 redis-17.3.5.tgz
 ```
 
-## name-version.tgz
+### name-version.tgz
 
 - chart定义相关文件
 
@@ -40,7 +41,7 @@ values.yaml # chart具体定义文件，除了通过helm命令行选项传递参
 
 
 
-# helm values 文件
+### values
 
 在Helm中，`values.yaml`文件是用于定义Helm图表的默认配置值的文件。该文件包含了图表的配置参数及其默认值。用户可以通过修改这些值来自定义图表的行为。以下是关于Helm Values文件的详细解释：
 
@@ -84,273 +85,46 @@ values.yaml # chart具体定义文件，除了通过helm命令行选项传递参
 
 
 
-
-
-**helm values 文件与使用helm install --set key1=value1,key2=value2 时指定有什么区别？**
-
-`values.yaml` 文件和 `helm install --set` 选项都是用于配置 Helm Charts 安装的参数，但它们有一些关键的区别：
-
-1. **`values.yaml` 文件：**
-   - 位于 Helm Chart 的根目录，通常命名为 `values.yaml`。
-   - 包含默认的配置参数和它们的默认值。
-   - 提供了一种持久性的方式来定义默认值，这样用户可以在多次安装过程中重复使用相同的配置。
-   - 可以在 `values.yaml` 文件中定义复杂的结构和模板。
-
-   示例 `values.yaml` 文件：
-
-   ```yaml
-   # values.yaml
-   database:
-     host: "localhost"
-     port: 5432
-     username: "admin"
-     password: "password"
-   ```
-
-   在安装时，可以通过 `-f` 选项指定自定义的 YAML 文件：
-
-   ```bash
-   helm install mychart ./mychart -f custom_values.yaml
-   ```
-
-2. **`helm install --set` 选项：**
-   - 在 Helm 安装命令中使用 `--set` 选项，直接在命令行上提供覆盖默认值的键值对。
-   - 提供了一种即时临时的方式来覆盖默认值，不需要修改 `values.yaml` 文件。
-   - 对于一次性或特定安装需求很有用，但不会影响到后续的安装。
-   - 可以在一条命令中设置多个参数。
-
-   示例使用 `--set` 选项的命令：
-
-   ```bash
-   helm install mychart ./mychart --set database.host=custom-host,database.port=8080
-   ```
-
-总体而言，`values.yaml` 文件适用于定义默认值和提供持久性的配置，而 `--set` 选项适用于在特定安装过程中提供即时的、临时的配置覆盖。用户可以根据实际需求选择使用其中之一或两者结合使用。
-
-
-
-
-
-**为什么 --set 支持的值，在 values 文件中没有列出？**
-
-`--set` 选项允许在命令行上直接指定覆盖 Helm Chart 中定义的默认值。这意味着你可以在安装 Helm Chart 时动态地设置特定的值，而不需要修改 `values.yaml` 文件。这种灵活性允许用户在不编辑或重新打包 Helm Chart 的情况下进行定制。
-
-虽然 `values.yaml` 文件通常包含默认值，但并不是所有可能的配置选项都在其中列出。有时，Helm Chart 作者可能仅在模板文件中引用了某些值，而没有将它们列在 `values.yaml` 中，因为这些值可能更具体，适用于特定场景，或者是可选的配置项。
-
-`--set` 选项的灵活性允许用户在不修改 Helm Chart 的情况下，通过命令行直接提供所需的值。这对于一次性的、特定场景下的配置需求非常有用。
-
-总的来说，`values.yaml` 文件通常用于提供默认值和文档，而 `--set` 选项则提供了一种即时覆盖这些默认值的方式，以适应临时或特定的安装需求。
-
-
-
-**helm install 时 -f 和 --set 选项可以同时指定吗？**
-
-是的，`helm install` 命令中的 `-f`（或 `--values`）选项和 `--set` 选项可以同时使用，允许你通过文件和命令行直接提供 Helm Chart 安装的配置。
-
-例如，你可以使用 `-f` 选项指定一个包含配置值的 YAML 文件，并在其后使用 `--set` 选项提供额外的覆盖。示例：
-
-```bash
-helm install myrelease ./mychart -f custom_values.yaml --set database.host=custom-host,database.port=8080
-```
-
-上述命令中，`custom_values.yaml` 文件中的配置值将被加载，同时通过 `--set` 选项提供的值将覆盖其中的特定项。
-
-这种组合的使用方式非常有用，因为你可以通过文件提供大量配置，同时使用 `--set` 选项进行一些临时或特定场景的覆盖，而不必修改 `values.yaml` 文件。
-
-
-
-
-
-# helm 常用命令
-
-- https://helm.sh/zh/docs/helm/helm/
-
-## repo
-
+## helm 最佳实践
+### 安装/升级应用
+- 下面以 argocd 为例
 ```sh
-# 列出现有的chart仓库
-helm repo list
+# 1. 添加应用仓库
+helm repo add argo https://argoproj.github.io/argo-helm
 
-# 安装chart仓库，下面以Prometheus提供的chart仓库举例：
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
+# 2. 查看仓库中有哪些 chart
+helm search repo argo
+helm repo list # 验证，列出现有的chart仓库
+
+# 3. 查看具体 chart 的所有版本信息
+helm search repo argo/argo-cd -l
+
+# 4. 下载选定的 chart 包，适用于离线环境，后期安装时还可以提高加载速度
+helm pull argo/argo-cd --version 9.3.7
+
+# 5. 查看 chart 的默认 values 文件，只把需要的内容复制到 values.yaml 中，并按需修改
+helm show values ./argo-cd-9.3.7.tgz > reference-defaults.yaml
+helm show readme ./argo-cd-9.3.7.tgz > reference-readme.md # 查看chart的安装前readme
+
+
+# 6. 安装或更新 argo-cd
+helm upgrade --install argocd ./argo-cd-9.3.7.tgz \
+  -f values.yaml \
+  --namespace argocd \
+  --create-namespace
+
+# 7. 查看安装状态，比如：接下来该如何操作等...
+helm status argocd -n argocd
 ```
 
 
 
-## show
-
-- 打印 values 文件、安装前的readme等
-
-### values
-
-```sh
-# 导出values文件
-# helm show values prometheus-community/kube-prometheus-stack > values-kube-prometheus-stack.yaml
-```
-
-### readme
-
-```sh
-# 打印安装前的readme
-helm show readme my-repo/redis
-```
+## ========================================
 
 
 
-## installs
 
-- 安装chart
-
-```sh
--n, --namespace <string> # 指定namespace
-
--f # 指定json或yaml文件传参
-
---set <stringArray> # 传参（可以使用逗号指定多个或单独的值：key1=val1，key2=val2）
-```
-
-
-
-## status
-
-- 一般用于查看安装完chart后输出的信息，比如：接下来该如何操作等...
-
-```sh
-helm status redis -n redis
-```
-
-
-
-## search
-
-- 查看可用版本
-
-### repo
-
-```sh
-# 查看目前最新的chart版本
-# helm search repo prometheus-community/kube-prometheus-stack
-NAME                                      	CHART VERSION	APP VERSION	DESCRIPTION                                       
-prometheus-community/kube-prometheus-stack	41.4.1       	0.60.1     	kube-prometheus-stack collects Kubernetes manif...
-
-
-# 查看chart的历史版本
-# helm search repo prometheus-community/kube-prometheus-stack -l
-NAME                                      	CHART VERSION	APP VERSION	DESCRIPTION                                       
-prometheus-community/kube-prometheus-stack	41.4.1       	0.60.1     	kube-prometheus-stack collects Kubernetes manif...
-prometheus-community/kube-prometheus-stack	41.4.0       	0.60.1     	kube-prometheus-stack collects Kubernetes manif...
-prometheus-community/kube-prometheus-stack	41.3.2       	0.60.1     	kube-prometheus-stack collects Kubernetes manif...
-prometheus-community/kube-prometheus-stack	41.3.1       	0.60.1     	kube-prometheus-stack collects Kubernetes manif...
-prometheus-community/kube-prometheus-stack	41.3.0       	0.60.1     	kube-prometheus-stack collects Kubernetes manif...
-...
-```
-
-
-
-## upgrade
-
-`helm upgrade` 命令是 Helm 包管理器中的一个重要命令，用于升级已部署的 Helm 发行版（release）。它允许用户在应用程序部署期间更新 Helm 发行版的配置和图表版本。
-
-下面是 `helm upgrade` 命令的详细解释：
-
-```
-helm upgrade [RELEASE] [CHART] [flags]
-```
-
-- `[RELEASE]`：指定要升级的 Helm 发行版的名称。Helm 使用发行版名称来跟踪部署的应用程序。
-- `[CHART]`：指定要使用的 Helm 图表的名称或路径。图表是打包了应用程序的文件，描述了应用程序的配置、依赖关系和部署说明。
-- `[flags]`：可选的标志选项，用于配置升级操作的各个方面。常见的标志选项包括：
-  - `--set key=value`：为 Helm 图表中的值设置自定义的键值对。这可以覆盖图表中默认的配置值。
-  - `--values file.yaml`：指定一个包含自定义值的 YAML 文件。这可以覆盖图表中的默认配置值。
-  - `--namespace namespace`：指定要升级的 Helm 发行版所在的命名空间。
-  - `--wait`：等待升级完成后再返回。
-  - `--timeout duration`：设置升级操作的超时时间。
-  - `--force`：强制进行升级，即使已经存在相同名称的 Helm 发行版。
-
-`helm upgrade` 命令的工作原理是：它会将指定的 Helm 图表解析为 Kubernetes 资源对象，并将这些对象应用于已部署的 Helm 发行版。它会根据图表的更新内容来更新现有的 Kubernetes 资源对象，包括创建、更新和删除对象，以使应用程序保持最新状态。
-
-注意：在运行 `helm upgrade` 命令之前，确保已经安装了 Helm 并初始化了相关的 Kubernetes 环境。
-
-
-
-### 范例：更新 helm 部署的应用
-
-我在部署时，少添加了个 --set externalURL=http://core.harbor.domain 的参数，如何通过 helm upgrade 来更新
-
-```sh
-helm install harbor \
-harbor/harbor \
---set expose.type=nodePort \
---set expose.tls.enabled=false \
---set expose.nodePort.ports.http.nodePort=30003 \
---set expose.nodePort.ports.notary.nodePort=30005 \
--n harbor \
---version 1.9.6
-```
-
-
-
-要使用`helm upgrade`命令来更新Helm部署的Harbor并添加`--set externalURL=http://core.harbor.domain`参数，您可以按照以下步骤操作：
-
-1. 确保您已经安装了最新版本的Helm，并且已经连接到正确的Kubernetes集群。
-2. 运行以下命令来更新Helm部署：
-   - 此命令将使用新的参数值来更新Harbor的Helm部署。请确保将`--set externalURL=http://core.harbor.domain`参数添加到命令中，以便正确设置外部URL。
-   - Helm将会执行更新操作，并显示相应的输出。请耐心等待直到更新完成。
-
-```sh
-helm upgrade harbor harbor/harbor \
---set expose.type=nodePort \
---set expose.tls.enabled=false \
---set expose.nodePort.ports.http.nodePort=30003 \
---set expose.nodePort.ports.notary.nodePort=30005 \
---set externalURL=http://172.16.0.120 \
--n harbor \
---version 1.9.6
-
-
-# 输出结果
-Release "harbor" has been upgraded. Happy Helming!
-NAME: harbor
-LAST DEPLOYED: Wed Jul  5 19:04:10 2023
-NAMESPACE: harbor
-STATUS: deployed
-REVISION: 2
-TEST SUITE: None
-NOTES:
-Please wait for several minutes for Harbor deployment to complete.
-Then you should be able to visit the Harbor portal at http://core.harbor.domain
-For more details, please visit https://github.com/goharbor/harbor
-
-
-# Pod重建中
-# kubectl get pod -n harbor
-NAME                                    READY   STATUS              RESTARTS      AGE
-harbor-chartmuseum-5db45f74b8-kwpm2     0/1     ContainerCreating   0             5s
-harbor-chartmuseum-689b5f8fc7-8nrbk     1/1     Running             0             34m
-harbor-core-64cc498fd5-9hxzg            1/1     Running             1 (33m ago)   34m
-harbor-core-85878fc867-spmrn            0/1     Running             0             5s
-harbor-database-0                       1/1     Running             0             10m
-harbor-jobservice-54d89b98cb-pz82n      0/1     Running             0             5s
-harbor-jobservice-95fff6d7f-jgfrv       1/1     Running             0             34m
-harbor-nginx-5c68798cf-lwcqz            1/1     Running             0             34m
-harbor-notary-server-556995c788-wdzjb   0/1     Running             0             5s
-harbor-notary-server-55978f9b96-b7b74   1/1     Running             3 (32m ago)   34m
-harbor-notary-signer-54fcdff794-nhh7h   0/1     ContainerCreating   0             5s
-harbor-notary-signer-5ddd755cc9-lc2gn   1/1     Running             3 (32m ago)   34m
-harbor-portal-8977b6988-ngmgd           1/1     Running             0             34m
-harbor-redis-0                          1/1     Running             0             34m
-harbor-registry-5cb9c4bbc6-hjhb2        0/2     ContainerCreating   0             5s
-harbor-registry-87b7fbdd-qqcnn          2/2     Running             0             34m
-harbor-trivy-0                          1/1     Running             0             34m
-
-```
-
-通过以上步骤，您将能够使用`helm upgrade`命令来更新Harbor的Helm部署，并添加了缺少的`--set externalURL=http://core.harbor.domain`参数。
-
-
-
-## get
+### get
 
 `helm get` 命令是 Helm 包管理器中的一个常用命令，用于获取有关 Helm 发行版（release）的信息。它可以用于查看已部署应用程序的状态、配置和其他相关详细信息。
 
@@ -461,141 +235,6 @@ externalURL: http://172.16.0.120:30002
   EXT_ENDPOINT: "http://172.16.0.120:30003"
 ```
 
-
-
-## list
-
-`helm list` 命令用于列出当前安装的 Helm 发布（releases）。以下是对 `helm list` 命令的详解：
-
-### 基本用法
-
-```bash
-helm list [flags]
-```
-
-### 常用选项
-
-- **--all-namespaces (-A):** 显示所有命名空间中的 Helm 发布。
-  
-  ```bash
-  helm list -A
-  ```
-
-- **--all (-a):** 显示所有状态的 Helm 发布，包括已卸载的。
-
-  ```bash
-  helm list --all
-  ```
-
-- **--short (-q):** 以简短的形式显示 Helm 发布的名称。
-
-  ```bash
-  helm list --short
-  ```
-
-- **--output (-o):** 指定输出格式（可选值为 "table"、"yaml"、"json"）。
-
-  ```bash
-  helm list --output json
-  ```
-
-### 输出列解释
-
-`helm list` 命令的输出结果通常包括以下列：
-
-1. **NAME:** Helm 发布的名称。
-
-2. **NAMESPACE:** Helm 发布所在的 Kubernetes 命名空间。
-
-3. **REVISION:** 发布的版本号，每次发布都会增加。
-
-4. **STATUS:** 发布的状态，可能的值包括 "deployed"、"failed"、"pending" 等。
-
-5. **CHART:** Helm Chart 的名称。
-
-6. **APP VERSION:** 发布的应用程序版本。
-
-7. **LAST DEPLOYED:** 最后一次发布的时间戳。
-
-### 示例
-
-1. **列出所有 Helm 发布：**
-
-   ```bash
-   helm list
-   ```
-
-2. **以简短形式列出 Helm 发布名称：**
-
-   ```bash
-   helm list --short
-   ```
-
-3. **列出所有命名空间中的 Helm 发布：**
-
-   ```bash
-   helm list -A
-   ```
-
-4. **以 JSON 格式输出 Helm 发布信息：**
-
-   ```bash
-   helm list --output json
-   ```
-
-`helm list` 命令对于查看当前 Helm 发布的状态、版本和其他相关信息非常有用。你可以使用不同的选项来满足不同的信息查看需求。
-
-
-
-## pull
-
-- 获取values文件等
-
-`helm pull` 是 Helm 中的一个命令，Helm 是用于 Kubernetes 的包管理器。该命令用于从 Helm 仓库将一个或多个图表下载到本地机器，而无需将它们安装到 Kubernetes 集群中。它允许用户在不部署图表的情况下获取它们，这对于检查图表内容、进行修改或将它们存储以供以后使用都很有用。
-
-以下是如何使用 `helm pull` 的详细说明：
-
-1. **语法**：
-   ```
-   helm pull [flags] [CHART] [DESTINATION]
-   ```
-
-2. **标志**：
-   - `-h`，`--help`：显示命令的帮助信息。
-   - `--version`：指定要拉取的图表的版本。
-
-3. **参数**：
-   - `[CHART]`：要拉取的图表的名称。它可以是 `[repository/]name` 的格式，其中 `repository` 是仓库的名称（如果省略，命令将在默认仓库中查找）。
-   - `[DESTINATION]`：可选的。图表应保存到的目录。如果未指定，则图表将保存在当前目录中。
-
-4. **示例**：
-   ```bash
-   helm pull stable/mysql
-   ```
-   这个命令从默认的 Helm 仓库中获取 MySQL 图表，并将其保存在当前目录中。
-
-5. **指定版本**：
-   如果要拉取图表的特定版本，可以使用 `--version` 标志。例如：
-   ```bash
-   helm pull --version 1.2.3 stable/mysql
-   ```
-   这个命令将拉取 MySQL 图表的版本 1.2.3。
-
-6. **输出**：
-   一旦执行该命令，它会获取指定的图表或图表版本，并将其保存为 `.tgz` 文件到目标目录中。
-
-7. **用途**：
-   - **图表检查**：拉取图表允许您在将其部署到 Kubernetes 集群之前检查其内容，例如模板、值和元数据。
-   - **本地修改**：您可以拉取图表，在本地进行修改，然后将修改后的图表部署到您的集群中。
-   - **离线使用**：拉取图表对于没有直接互联网访问的环境或者为以后使用存储图表都很有用。
-
-这就是在 Helm 中使用 `helm pull` 命令的基本用法和功能。它是管理和处理 Kubernetes 图表的一个方便工具。
-
-**范例：**
-
-```
-1
-```
 
 
 
