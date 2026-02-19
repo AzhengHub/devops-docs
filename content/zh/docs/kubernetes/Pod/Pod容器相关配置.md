@@ -518,3 +518,48 @@ spec:
 - 执行时机：当 Pod 收到删除指令（如 kubectl delete 或缩容）时，在向容器发送 SIGTERM 信号之前执行。
 - 只有当 preStop 脚本跑完了，K8s 才会发送 SIGTERM 信号给主进程。
 - 注意事项：整个 preStop 的执行时间受 terminationGracePeriodSeconds（默认 30s）限制。如果钩子跑了 40s，K8s 还是会直接杀掉容器。
+
+## 重启策略
+- Pod.spec.restartPolicy（配置在 Pod 级别，但实际是作用于 Pod 中的**所有容器**）
+- 当 Pod 中的某个容器异常退出时，是该节点上的 **`kubelet`** 根据 `restartPolicy` 介入，在**当前节点原地重启这个容器**。在这个过程中，Pod 依然停留在该节点，Pod 的网络（IP 地址）和存储卷挂载都不会发生改变。
+
+容器重启策略与 Pod 重建的区别：
+
+| 维度 | 容器原地重启 (`restartPolicy`) | Pod 跨节点重建 (Controller 介入) |
+| --- | --- | --- |
+| **触发原因** | 容器内进程崩溃、OOMKilled、Liveness 探针失败等。 | 节点宕机、Pod 被手动删除、节点资源耗尽导致 Pod 被驱逐（Evicted）。 |
+| **执行者** | 当前节点的 `kubelet`。 | 高级控制器（如 Deployment, ReplicaSet, StatefulSet）+ 调度器（kube-scheduler）。 |
+| **Pod 状态变化** | Pod 名字、UID、IP 均**不变**。`RESTARTS` 计数器 +1。 | 旧 Pod 被销毁，产生一个**全新**的 Pod。名字（可能变化）、UID 和 IP **全部改变**。 |
+| **核心结论** | `restartPolicy` 只能处理**容器级别**的崩溃。 | Controller 才能处理 **Pod 级别**的生命周期终结。 |
+
+K8s 提供了三种 `restartPolicy`：
+
+- **`Always` (默认值):** 无论容器是正常退出（状态码 0）还是异常退出（非 0），kubelet 都会无限次重启它。
+
+- **`OnFailure`:** 只有当容器异常退出（状态码非 0）时，kubelet 才会重启它。如果正常执行完毕并退出，则不重启。
+
+- **`Never`:** 无论容器以何种状态退出，kubelet 都绝对不会重启它。   
+
+> 容器的重启会伴随着**指数退避延迟（CrashLoopBackOff）**。kubelet 不会无限连发重启，延迟时间会从 10 秒开始，翻倍增长（20s, 40s...），最大延迟到 5 分钟。如果在排查问题时看到 `CrashLoopBackOff`，说明 `restartPolicy` 正在生效，但容器反复启动失败。
+
+
+
+
+
+
+控制器与 `restartPolicy` 的强制绑定关系：
+
+| 控制器类型 (Controller) | 强制要求的 `restartPolicy` | 设计初衷 / 记忆口诀 |
+| --- | --- | --- |
+| **Deployment** | `Always` | **“长驻服务，死磕到底”**。目标是保持应用永远在线，只要容器退出（哪怕是正常退出），就必须立刻重启它。 |
+| **ReplicaSet** | `Always` | 同上（Deployment 底层实际上是在控制 ReplicaSet）。 |
+| **StatefulSet** | `Always` | 针对有状态服务（如数据库、消息队列），必须保持长驻运行。 |
+| **DaemonSet** | `Always` | 针对节点守护进程（如监控采集插件、网络插件），必须随节点一直运行。 |
+| **Job** | `OnFailure` 或 `Never` | **“干完就撤，绝不回头”**。任务跑完就该结束，**绝对不能用 `Always`**。如果用了 `Always`，脚本执行成功后正常退出（状态码 0），kubelet 还会以为它挂了，立刻把它重新拉起来，导致陷入无限循环。 |
+| **CronJob** | `OnFailure` 或 `Never` | 定时任务，底层调用的也是 Job，规则同上。 |
+| *(无控制器的裸 Pod)* | `Always`, `OnFailure`, `Never` 均可 | 没有控制器管理的“散养” Pod，三种策略都支持（但在生产环境中极不推荐使用裸 Pod）。 |
+
+> 总结：只要是用来跑“**服务**”（Web、数据库、中间件）的控制器，`restartPolicy` 必须是 `Always`；只要是用来跑“**任务**”（数据备份、数据清洗脚本）的控制器，绝对不能是 `Always`。
+
+---
+
