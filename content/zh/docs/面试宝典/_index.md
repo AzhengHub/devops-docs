@@ -950,6 +950,7 @@ Docker 在 bridge 网络模式下，默认会创建一个 docker0 的网桥，�
 
 **其他：**
 - CoreDNS：集群内部 DNS 服务。
+- 网络插件 (CNI)：如 Flannel、Calico 等，负责实现 Pod 之间的跨主机通信。
 {{< /collapse >}}
 
 {{< collapse summary="***kubernetes 中的 Pod 是什么？**" >}}

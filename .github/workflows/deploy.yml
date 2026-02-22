@@ -1,0 +1,48 @@
+name: Deploy Docs to Alibaba Cloud
+
+on:
+  push:
+    branches:
+      - main  # 部署的分支名
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Execute deployment script via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            cd /root/devops-docs/
+            
+            # 考虑到阿里云拉取 GitHub 经常超时，设置最大重试 5 次
+            MAX_RETRIES=5
+            RETRY_COUNT=0
+            PULL_SUCCESS=false
+            
+            # 使用 fetch + reset --hard 覆盖本地，避免线上由于意外修改导致拉取冲突
+            while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+              echo "Attempting to fetch code from GitHub (Attempt $((RETRY_COUNT+1))/$MAX_RETRIES)..."
+              
+              if git fetch origin main && git reset --hard origin/main; then
+                PULL_SUCCESS=true
+                break
+              else
+                echo "Git pull failed. Retrying in 10 seconds..."
+                RETRY_COUNT=$((RETRY_COUNT+1))
+                sleep 10
+              fi
+            done
+            
+            if [ "$PULL_SUCCESS" = false ]; then
+              echo "Deployment failed: Unable to pull code from GitHub after $MAX_RETRIES attempts."
+              exit 1
+            fi
+            
+            echo "Code updated successfully! Restarting caddy-hugo.service..."
+            systemctl restart caddy-hugo.service
+            
+            echo "Service restarted. Deployment completed!"
