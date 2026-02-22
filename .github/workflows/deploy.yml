@@ -59,7 +59,7 @@ jobs:
           username: ${{ secrets.MAIL_USERNAME }}
           password: ${{ secrets.MAIL_PASSWORD }}
           # 邮件内容配置
-          subject: 阿里云自动部署结果: ${{ job.status }} 🚀
+          subject: "阿里云自动部署结果: ${{ job.status }} 🚀"
           to: ${{ secrets.MAIL_TO }}
           from: GitHub Actions <${{ secrets.MAIL_USERNAME }}>
           body: |
