@@ -46,3 +46,27 @@ jobs:
             systemctl restart caddy-hugo.service
             
             echo "Service restarted. Deployment completed!"
+
+      - name: Send email notification
+        uses: dawidd6/action-send-mail@v3
+        if: always()  # 不管上成功还是失败，这步都会执行
+        with:
+          # QQ 邮箱 SMTP 服务器配置
+          server_address: smtp.qq.com
+          server_port: 465
+          secure: true
+          # 认证信息
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          # 邮件内容配置
+          subject: 阿里云自动部署结果: ${{ job.status }} 🚀
+          to: ${{ secrets.MAIL_TO }}
+          from: GitHub Actions <${{ secrets.MAIL_USERNAME }}>
+          body: |
+            项目: ${{ github.repository }}
+            触发人: ${{ github.actor }}
+            提交信息: ${{ github.event.head_commit.message }}
+            最终状态: ${{ job.status }}
+            
+            如需查看详情，请前往 GitHub Actions 页面: 
+            https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
