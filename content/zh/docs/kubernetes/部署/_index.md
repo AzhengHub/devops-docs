@@ -1,6 +1,6 @@
 ---
 title: "部署"
-weight: 1
+weight: 2
 ---
 
 
