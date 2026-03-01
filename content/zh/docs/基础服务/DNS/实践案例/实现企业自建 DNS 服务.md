@@ -8,7 +8,7 @@ title: "实现企业自建 DNS 服务"
 
 
 ## 二、架构概览
-![](/docs/基础服务/dns/实践案例/主从DNS.png)
+![](/docs/基础服务/dns/实践案例/主从DNS.jpg)
 
 
 | 虚拟机名称      | hostname      | OS           | CPU  | 内存 | 磁盘  | IP |

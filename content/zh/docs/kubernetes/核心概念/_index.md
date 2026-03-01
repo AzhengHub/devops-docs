@@ -85,27 +85,50 @@ K8s 集群采用典型的 **Master-Worker (控制平面-工作节点)** 架构�
 **默认运行方式：**
 - 静态 Pod，控制平面的 kubelet 监控 /etc/kubernetes/manifests/kube-scheduler.yaml 文件，直接利用本机的容器运行时拉取镜像并启动 kube-scheduler 容器。
 
-
 ---
 
 #### kube-controller-manager
-- **集群的大管家**。运行着诸多后台控制器（如 Node, ReplicaSet Controller），负责维持集群的期望状态。
-- 如果 Deployment 修改了副本数但 Pod 数量迟迟没变化，大概率是 Controller Manager 异常。
+- 集群的大管家，运行着诸多后台控制器（如 Node, ReplicaSet Controller），负责维持集群的期望状态。
+
+**默认端口：**
+- 10257（TCP）：主要用于暴露自身的 metrics 指标以及健康检查 healthz 等
+
+**默认运行方式：**
+- 静态 Pod，控制平面的 kubelet 监控 /etc/kubernetes/manifests/kube-controller-manager.yaml 文件，直接利用本机的容器运行时拉取镜像并启动 kube-controller-manager 容器。  
+
+
+
+---
 
 ### 2. 工作节点组件
 运行在每一个 Worker Node 上，负责维护运行的 Pod 并提供 K8s 运行环境。
 
 #### kubelet
-- **节点的大管家（Agent）**。接收 API Server 的指令，管理本节点 Pod 和容器的生命周期（启动、停止、执行健康探针）。
-- 如果 Node 状态变为 `NotReady`，或者 Pod 无法启动，第一步先查该节点 `kubelet` 的 `journalctl` 日志。
+- **节点的大管家（Agent）**，它直接与 kube-apiserver 通信，接收分配给该节点的 Pod 配置信息，并确保这些 Pod 中的容器处于运行状态且健康。它只会管理由 K8s 创建的容器。
+
+**默认端口：**
+- 10250（TCP）：kube-apiserver 通过这个端口与 kubelet 通信的。
+    - 当执行 kubectl logs <pod-name> (查看日志) 或者 kubectl exec -it <pod-name> -- bash (进入容器终端) 时，请求会先到达 kube-apiserver，然后 API Server 就会作为客户端，去连接目标节点上 kubelet 的 10250 端口，最终由 kubelet 连通底层的容器。
+- 10248（TCP）：kubelet 自身的健康检查端口，供节点本地的守护进程或监控系统探测 kubelet 是否崩溃，以便触发本地重启自愈。
+
+**运行方式：**
+- systemctl status kubelet
+
 
 #### kube-proxy
-- **网络代理与负载均衡**。维护节点上的网络规则（iptables/IPVS），实现 K8s Service 的网络转发机制。
-- 如果 Pod 运行正常，但通过 Service IP 无法访问，通常是 `kube-proxy` 规则同步失败或内核参数问题。
+- **网络代理与负载均衡**，它在每个节点上维护网络规则（通常通过操作主机的 iptables 或 IPVS）。这些规则允许从集群内部或外部的网络会话与 Pod 进行通信，是实现 K8s Service 服务的核心组件。
+
+**默认端口：**
+- 10249（TCP）：用于暴露自身的性能指标（Metrics）。Prometheus 等监控系统就是通过抓取每个节点上 kube-proxy 的这个端口，来监控网络规则同步是否延迟、连接数等情况。
+- 10256（TCP）：专门用于暴露 /healthz 接口，供 kubelet 或其他组件检查当前的 kube-proxy 进程是否健康存活。
+
+**运行方式：**
+- 通过 DaemonSet 在每个 worker 节点运行。
+
+
 
 #### Container Runtime
-- **容器运行时**。真正负责运行容器的基础软件（如 containerd, CRI-O）。Kubelet 通过 CRI 接口与其交互。
-- 关注底层镜像拉取失败 (ImagePullBackOff)、容器文件系统损坏等底层报错。
+- **容器运行时**。真正负责运行容器的基础软件（如 containerd, CRI-O），实现了 CRI（Container Runtime Interface）规范，Kubelet 通过 CRI 接口与其交互。
 
 
 ### 3. 其他组件
@@ -114,11 +137,9 @@ K8s 集群采用典型的 **Master-Worker (控制平面-工作节点)** 架构�
 
 #### CoreDNS
 - **集群的 DNS 服务器**。负责为集群中的 Service 和 Pod 提供 DNS 解析服务。
-- 如果 Service 无法解析，通常是 CoreDNS 配置错误或 Pod 网络问题。 
 
 #### CNI
 - **容器网络接口**。负责为 Pod 分配网络资源（IP 地址、路由表），并确保不同 Pod 之间可以通信。
-- 如果 Pod 无法通信，通常是 CNI 插件配置错误或网络策略冲突。
 
 
 ## 三、K8s 核心术语对照表
