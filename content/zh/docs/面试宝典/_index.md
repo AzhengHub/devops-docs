@@ -741,11 +741,21 @@ WHERE ep.project_id IS NULL;
 
 
 ## 监控与告警
-{{< collapse summary="***Prometheus 服务发现原理？**" >}}
-取决于服务发现类型，常见的有基于 K8s 的、基于文件、基于 consul 的等：
+{{< collapse summary="***Prometheus 服务发现和 relabel 原理？**" >}}
+第一阶段（抓取哪些服务）：取决于服务发现类型，常见的有基于 K8s 的、基于文件、基于 consul 的等：
 - kubernetes_sd：通过监听 Kubernetes API Server，获取 node、service、pod、endpoints、endpointslice、ingress 的信息。
-- file_sd：
-- consul_sd：
+- file_sd：监听文件变化，动态发现新的目标。
+
+第二阶段（抓取服务中的哪些指标）：向 Target 发起 pull 请求，获取指标数据。
+
+第三阶段（保留指标中的哪些数据）：向 Target 发起 pull 请求，获取指标数据。
+
+
+发现到目标后，会进行两个操作，relabel 和 metric_relabel。
+- relabel 决定抓取哪些目标（Target）
+- metric_relabel 对抓取到的指标进行标签处理，例如保留（Keep）、丢弃（Drop）、重写（Replace）等。
+    - 过滤（Drop/Keep）：比如只保留带有 prometheus.io/scrape: "true" 注解的 Pod，把其他的直接丢弃。
+    - 重写（Replace）：将底层长串的元数据标签（如 __meta_kubernetes_pod_name）转换为更友好的业务标签（如 pod_name）。
 {{< /collapse >}}
 
 {{< collapse summary="***Prometheus Metric 类型有哪些？**" >}}

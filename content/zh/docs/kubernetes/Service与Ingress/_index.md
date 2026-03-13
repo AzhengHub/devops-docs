@@ -137,29 +137,6 @@ spec:
 
 ---
 
-## Traefik
-### 部署
-```sh
-# 添加官方 Traefik Helm repo
-helm repo add traefik https://traefik.github.io/charts
-helm repo update
-
-# 创建专用 namespace（推荐）
-kubectl create namespace traefik
-
-# 拉取 chart（为后续升级提速）
-helm pull traefik/traefik --version 35.2.0
-
-# 导出并修改 values 文件
-helm show values traefik/traefik --version 35.2.0 > values-traefik-35.2.0.yaml
-
-# 安装/升级
-helm upgrade --install traefik traefik/traefik \
-  --version 35.2.0 \
-  --namespace traefik \
-  -f values-traefik-35.2.0.yaml
-```
-
 
 # Service
 

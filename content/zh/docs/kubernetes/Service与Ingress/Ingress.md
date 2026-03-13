@@ -149,11 +149,11 @@ ingress-nginx-controller-admission   ClusterIP      10.100.29.175   <none>      
 
 
 
-# Ingress-Nginx - Ingress
+## Ingress-Nginx - Ingress
 
 - https://kubernetes.github.io/ingress-nginx/
 
-## annotations
+### annotations
 
 - https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/
 - nginx Ingress 经常使用注解（annotations）来配置一些选项，具体取决于 Ingress 控制器，不同的 [Ingress 控制器](https://kubernetes.io/zh-cn/docs/concepts/services-networking/ingress-controllers)支持不同的注解；
@@ -175,7 +175,7 @@ spec:
 ...
 ```
 
-## 环境说明
+环境说明：
 
 - 下面范例中所使用的 ingress controller 对应 service 的信息；
 
@@ -206,13 +206,10 @@ Session Affinity:  None
 Events:            <none>
 ```
 
-## 发布一个简单的 web 服务
+### 发布一个简单的 web 服务
 
 - 对外发布一个最简单的 web服务
-
-### demoapp.yaml
-
-```yaml
+```yaml {filename="demoapp.yaml"}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -245,7 +242,7 @@ spec:
     targetPort: 80
 ```
 
-#### 验证
+验证：
 
 ```yaml
 # kubectl describe svc demoapp-svc
@@ -266,9 +263,8 @@ Session Affinity:  None
 Events:            <none>
 ```
 
-### ingress.yaml
 
-```yaml
+```yaml {filename="ingress.yamll"}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -290,7 +286,7 @@ spec:
               number: 80
 ```
 
-#### 验证
+验证：
 
 ```yaml
 # kubectl describe ingress ingress-demoapp
@@ -311,7 +307,7 @@ Events:
   Normal  Sync    8s (x2 over 43s)  nginx-ingress-controller  Scheduled for sync
 ```
 
-### 测试
+测试：
 
 ```yaml
 # 访问 ingress service 所提供的对外IP进行验证
@@ -334,11 +330,11 @@ iKubernetes demoapp v1.0 !! ClientIP: 10.244.1.136, ServerName: myapp-dep-77b844
 
 
 
-## 单域名https + 默认后端
+### 单域名https + 默认后端
 
 - 使用 ingress 对外发布 azheng.com 虚拟主机，并且使用 https 对外提供服务，最后再创建默认的 backend作为 sorryserver
 
-### secret
+#### secret
 
 - 为 azheng.com 创建自签名证书，而后生成tls类型的secret；
 - **注意：CN字段要与实际主机名相匹配**
@@ -356,9 +352,7 @@ iKubernetes demoapp v1.0 !! ClientIP: 10.244.1.136, ServerName: myapp-dep-77b844
 # kubectl create secret tls azheng.com --cert=azheng.com.crt --key=azheng.com.key
 ```
 
-### demoapp.yaml
-
-```yaml
+```yaml {filename="demoapp.yaml"}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -391,9 +385,7 @@ spec:
     targetPort: 80
 ```
 
-### sorry-server.yaml
-
-```yaml
+```yaml {filename="sorry-server.yaml"}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -425,10 +417,8 @@ spec:
   - port: 80
     targetPort: 80
 ```
-
-### ingress.yaml
-
-```yaml
+ 
+```yaml {filename="ingress.yaml"}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -462,7 +452,7 @@ spec:
         number: 80
 ```
 
-#### 验证
+验证：
 
 ```yaml
 # kubectl describe ingress ingress-demoapp
@@ -489,7 +479,7 @@ Events:
 
 
 
-### 测试
+测试：
 
 ```yaml
 # curl -H "Host:azheng.com" 10.0.0.168 -kL
@@ -524,13 +514,11 @@ iKubernetes demoapp v1.0 !! ClientIP: 10.244.1.70, ServerName: demoapp-dep-5748b
 
 
 
-## 多路径
+### 多路径
 
 - 访问不同路径时将流量转发给不同的service处理
 
-### demoapp-foo.yaml
-
-```yaml
+```yaml {filename="demoapp-foo.yaml"}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -563,9 +551,7 @@ spec:
     targetPort: 80
 ```
 
-### demoapp-bar.yaml
-
-```yaml
+```yaml {filename="demoapp-bar.yaml"} 
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -598,9 +584,7 @@ spec:
     targetPort: 80
 ```
 
-### Ingress yaml
-
-```yaml
+```yaml {filename="ingress.yaml"}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -628,7 +612,7 @@ spec:
               number: 80
 ```
 
-#### 验证
+验证：
 
 ```yaml
 # kubectl describe ingress simple-fanout-example
@@ -650,7 +634,7 @@ Events:
   Normal  Sync    25s (x2 over 27s)  nginx-ingress-controller  Scheduled for sync
 ```
 
-### 测试
+测试：
 
 - 访问的路径在后端服务中也需存在，否则将报404
 
@@ -701,11 +685,9 @@ Events:  <none>
 
 
 
-## 多域名 http
+### 多域名 http
 
-### demoapp-azheng.yaml
-
-```yaml
+```yaml {filename="demoapp-azheng.yaml"}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -738,9 +720,7 @@ spec:
     targetPort: 80
 ```
 
-### demoapp-xiangzheng.yaml
-
-```yaml
+```yaml {filename="demoapp-xiangzheng.yaml"}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -773,9 +753,7 @@ spec:
     targetPort: 80
 ```
 
-### ingress.yaml
-
-```yaml
+```yaml {filename="ingress.yaml"}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -805,7 +783,7 @@ spec:
               number: 80
 ```
 
-#### 验证
+验证：
 
 ```yaml
 # kubectl describe ingress name-virtual-host-ingress
@@ -828,7 +806,7 @@ Events:
   Normal  Sync    8s    nginx-ingress-controller  Scheduled for sync
 ```
 
-### 测试
+测试：
 
 - 访问不同的虚拟主机可以跳转到对应的 Backend
 
@@ -843,14 +821,14 @@ iKubernetes demoapp v1.1 !! ClientIP: 10.244.1.70, ServerName: demoapp-xiangzhen
 
 
 
-## 多域名 https
+### 多域名 https
 
 - 各种 Ingress 控制器所支持的 TLS 功能之间存在差异。请参阅有关 [nginx](https://kubernetes.github.io/ingress-nginx/user-guide/tls/)、 [GCE](https://git.k8s.io/ingress-gce/README.md#frontend-https) 或者任何其他平台特定的 Ingress 控制器的文档，以了解 TLS 如何在你的环境中工作。
 
 
 - 使用 ingress 对外发布两个虚拟主机 xiangzheng.com 和 azheng.com，且都使用 https 对外提供服务
 
-### secret
+secret：
 
 - 为 xiangzheng.com 创建自签名证书，而后生成tls类型的secret；
 - **注意：CN字段要与实际主机名相匹配**
@@ -883,9 +861,8 @@ iKubernetes demoapp v1.1 !! ClientIP: 10.244.1.70, ServerName: demoapp-xiangzhen
 # kubectl create secret tls azheng.com --cert=azheng.com.crt --key=azheng.com.key
 ```
 
-### xiangzheng.com.yaml
 
-```yaml
+```yaml {filename="xiangzheng.com.yaml"}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -918,9 +895,8 @@ spec:
     targetPort: 80
 ```
 
-### azheng.com.yaml
 
-```yaml
+```yaml {filename="azheng.com.yaml"}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -953,11 +929,9 @@ spec:
     targetPort: 80
 ```
 
-### ingress.yaml
-
 -  注意：如果不同虚拟主机使用同一个证书，那该证书需为SAN格式的多域名证书
 
-```yaml
+```yaml {filename="ingress.yaml"}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -995,7 +969,7 @@ spec:
     secretName: azheng.com
 ```
 
-#### 验证
+验证：
 
 ```yaml
 # kubectl describe ingress ingress-myapp
@@ -1021,7 +995,7 @@ Events:
   Normal  Sync    23s   nginx-ingress-controller  Scheduled for sync
 ```
 
-### 测试
+测试：
 
 ```sh
 # vim /etc/hosts
@@ -1048,15 +1022,12 @@ iKubernetes demoapp v1.1 !! ClientIP: 10.244.1.70, ServerName: azheng-dep-6df787
 
 
 
-### 其他说明
+其他说明：
 
 - 虚拟主机如未指定证书，则访问这个虚拟主机时返回的是 Ingress Controller 默认提供的证书。
   - Ingress-Nginx如何禁用虚拟主机的https？
 
-
-#### ingress.yaml
-
-```yaml
+```yaml {filename="ingress-xiangzheng.yaml"}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -1100,7 +1071,7 @@ spec:
               number: 80
 ```
 
-##### 验证
+验证：
 
 ```yaml
 # kubectl describe ingress ingress-azheng
@@ -1141,7 +1112,7 @@ Events:
   Normal  Sync    11m (x2 over 11m)  nginx-ingress-controller  Scheduled for sync
 ```
 
-#### 测试
+测试：
 
 - 访问 http://xiangzheng.com 时会自动跳转到https
 
@@ -1180,7 +1151,7 @@ iKubernetes demoapp v1.1 !! ClientIP: 10.244.1.70, ServerName: azheng-dep-6df787
 ...
 ```
 
-## 对外发布 dashboard
+### 对外发布 dashboard
 
 https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/#rewrite
 
@@ -1188,7 +1159,7 @@ https://kubernetes.github.io/ingress-nginx/examples/rewrite/
 
 - k8s dashboard 通过 ingress 对外发布
 
-### dashboard
+dashboard：
 
 ```sh
 # kubectl describe svc -n kubernetes-dashboard kubernetes-dashboard
@@ -1209,7 +1180,7 @@ Session Affinity:  None
 Events:            <none>
 ```
 
-### 通过根路径访问
+#### 通过根路径访问 dashboard
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -1234,7 +1205,7 @@ spec:
               number: 443
 ```
 
-#### 验证
+验证：
 
 - 访问：https://10.0.0.168/
 
@@ -1260,7 +1231,7 @@ Events:
 
 
 
-### 通过子路径访问
+#### 通过子路径访问
 
 
 ```yaml
@@ -1287,7 +1258,7 @@ spec:
               number: 443
 ```
 
-#### 验证
+验证：
 
 - 访问：https://10.0.0.168/dashboard/
   - 访问时末尾要加 "/"
@@ -1301,7 +1272,7 @@ spec:
 
 
 
-## 对外发布 longhorn
+### 对外发布 longhorn
 
 https://longhorn.io/docs/1.3.2/deploy/accessing-the-ui/longhorn-ingress/
 
@@ -1413,7 +1384,7 @@ $ curl -v http://97.107.142.125/ -u foo:bar
 ......
 ```
 
-## Resource 使用
+### Resource 使用
 
 - `Resource` 后端是一个引用，指向同一命名空间中的另一个 Kubernetes 资源，将其作为 Ingress 对象；
 - **`Resource` 后端与 Service 后端是互斥的，在二者均被设置时会无法通过合法性检查 ；**
@@ -1458,22 +1429,21 @@ spec:
 
 Contour是基于Envoy代理的。Contour是Kubernetes的Ingress控制器，使用Envoy代理来实现请求路由和负载均衡等功能。Contour基于Envoy提供了许多高级的流量管理功能，例如灰度发布、TLS终止、请求重试等。Contour支持Kubernetes的动态配置，可以与Istio等服务网格集成，为Kubernetes集群中的应用程序提供高级流量管理和安全功能。
 
-
-# Contour - Deploy
+### Contour - Deploy
 
 - https://projectcontour.io/getting-started/
 
 
 
-# Contour - Ingress
+### Contour - Ingress
 
 - https://projectcontour.io/docs/v1.23.0/config/ingress
 
-## annotations
+### annotations
 
 - https://projectcontour.io/docs/v1.23.0/config/annotations/
 
-## 环境说明
+### 环境说明
 
 - 下面范例中所使用的 ingress controller 对应 service 的信息；
 
@@ -1491,9 +1461,7 @@ envoy     ClusterIP   10.106.15.54    10.0.0.188    80/TCP,443/TCP   167m
 - 对外发布一个最简单的 web服务
 - **PS：自定义的 Ingress 可以不与 Ingress controller 位于同一名称空间**
 
-### demoapp.yaml
-
-```yaml
+```yaml {filename="demoapp.yaml"}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -1526,9 +1494,7 @@ spec:
     targetPort: 80
 ```
 
-### ingress.yaml
-
-```yaml
+```yaml {filename="ingress-demoapp.yaml"}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -1549,7 +1515,7 @@ spec:
               number: 80
 ```
 
-#### 验证
+验证：
 
 ```yaml
 # kubectl describe ingress ingress-demoapp
@@ -1567,7 +1533,7 @@ Annotations:      <none>
 Events:           <none>
 ```
 
-### 测试
+测试：
 
 ```yaml
 # 因为未加主机头，并且也没有定义Default backend，所以报404
@@ -1607,9 +1573,8 @@ iKubernetes demoapp v1.0 !! ClientIP: 10.244.1.90, ServerName: demoapp-dep-5748b
 # kubectl create secret tls xiangzheng.com --cert=xiangzheng.com.crt --key=xiangzheng.com.key
 ```
 
-### demoapp.yaml
 
-```yaml
+```yaml {filename="demoapp.yaml"}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -1642,9 +1607,8 @@ spec:
     targetPort: 80
 ```
 
-### sorry-server.yaml
 
-```yaml
+```yaml {filename="sorry-server.yaml"}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -1677,9 +1641,8 @@ spec:
     targetPort: 80
 ```
 
-### ingress.yaml
 
-```yaml
+```yaml {filename="ingress-demoapp.yaml"}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -1709,7 +1672,7 @@ spec:
         number: 80
 ```
 
-### 测试
+测试：
 
 - 注意：ingressClassName 设置为 contour 时测试域名访问需要修改hosts文件测试，如果使用添加Host主机头的方式访问将报错
 
@@ -1759,11 +1722,10 @@ dashboard-metrics-scraper   ClusterIP   10.109.180.121   <none>        8000/TCP 
 kubernetes-dashboard        ClusterIP   10.101.248.186   <none>        443/TCP    17s
 ```
 
-### ingress.yaml
 
 - 此示例无法实现对外发布dashboard，参阅下面的使用 HTTPProxy 来对外发布 dashboard
 
-```yaml
+```yaml {filename="dashboard-ingress.yaml"}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -1892,9 +1854,8 @@ spec:
 
 - 对外发布 kubernetes dashboard
 
-### httpproxy.yaml
 
-```yaml
+```yaml {filename="httpproxy.yaml"} 
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
@@ -1930,9 +1891,8 @@ dashboard   dashboard.xiangzheng.com                valid    Valid HTTPProxy
 
 - 根据请求报文中的首部字段路由
 
-### demoapp-v10.yaml
 
-```yaml
+```yaml {filename="demoapp-v10.yaml"} 
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -1965,9 +1925,8 @@ spec:
     targetPort: 80
 ```
 
-### demoapp-v11.yaml
 
-```yaml
+```yaml {filename="demoapp-v11.yaml"}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -2000,11 +1959,10 @@ spec:
     targetPort: 80
 ```
 
-### httpproxy.yaml
 
 - 多个header间为与逻辑，即都满足才匹配
 
-```yaml
+```yaml {filename="httpproxy.yaml"}
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
@@ -2063,9 +2021,8 @@ iKubernetes demoapp v1.1 !! ClientIP: 10.244.1.90, ServerName: demoapp-v11-dep-7
 
 - 通过流量分割可以实现金丝雀发布
 
-### demoapp-v10.yaml
 
-```yaml
+```yaml {filename="demoapp-v10.yaml"}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -2098,9 +2055,7 @@ spec:
     targetPort: 80
 ```
 
-### demoapp-v11.yaml
-
-```yaml
+```yaml {filename="demoapp-v11.yaml"}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -2133,11 +2088,10 @@ spec:
     targetPort: 80
 ```
 
-### httpproxy.yaml
 
 - 定义多个service，而后给每个service定义不同的权重，以实现灰度发布的效果
 
-```yaml
+```yaml {filename="httpproxy.yaml"}
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
@@ -2189,8 +2143,7 @@ iKubernetes demoapp v1.1 !! ClientIP: 10.244.1.90, ServerName: demoapp-v11-dep-7
 
 - 灰度部署测试没问题后，将流量全部发往新版本的service
 
-```yaml
-# vim httpproxy.yaml
+```yaml {filename="httpproxy.yaml"}
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
@@ -2233,9 +2186,8 @@ iKubernetes demoapp v1.1 !! ClientIP: 10.244.1.90, ServerName: demoapp-v11-dep-7
 
 - 通过流量镜像可以实现全量压测
 
-### demoapp-v10.yaml
 
-```yaml
+```yaml {filename="demoapp-v10.yaml"}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -2268,9 +2220,8 @@ spec:
     targetPort: 80
 ```
 
-### demoapp-v11.yaml
 
-```yaml
+```yaml {filename="demoapp-v11.yaml"}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -2303,11 +2254,10 @@ spec:
     targetPort: 80
 ```
 
-### httpproxy.yaml
 
 - 即主pod正常对外访问，而后定义一组新pod同样接受外部流量 但仅接受 不响应；
 
-```yaml
+```yaml {filename="httpproxy.yaml"}
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
@@ -2353,9 +2303,7 @@ iKubernetes demoapp v1.0 !! ClientIP: 10.244.1.168, ServerName: demoapp-v10-dep-
 
 - 自定义负载均衡策略
 
-### demoapp-v10.yaml
-
-```yaml
+```yaml {filename="demoapp-v10.yaml"}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -2388,9 +2336,7 @@ spec:
     targetPort: 80
 ```
 
-### demoapp-v11.yaml
-
-```yaml
+```yaml {filename="demoapp-v11.yaml"}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -2467,9 +2413,249 @@ iKubernetes demoapp v1.1 !! ClientIP: 10.244.1.90, ServerName: demoapp-v11-dep-7
 
 
 
+## 部署双 Ingress Controller 实现流量隔离
+部署两个 Ingress Controller，分别面向外部流量和内部流量。
+- 外部流量链路：公网 VIP -> 公网 LB (如 LVS) -> Traefik 实例 A (监听 ingressClass: traefik-external，部署在专门的 DMZ 节点组) -> C 端业务 Pod。
+- 内部流量链路：内网 VIP -> 内网 LB (如内部的 LVS 或 HAProxy) -> Traefik 实例 B (监听 ingressClass: traefik-internal，部署在内网管理节点组) -> kube-prometheus-stack 等内部 Pod。
 
-# ---
+参考文档：https://help.aliyun.com/zh/ack/ack-managed-and-ack-dedicated/user-guide/deploy-multiple-ingress-controllers-in-a-cluster
 
-# Istio 概述
 
-Istio是基于Envoy代理的。Envoy是一个开源的高性能边缘和服务代理，Istio利用Envoy代理提供了许多服务网格功能，如流量管理、故障恢复、跟踪和监视。Istio在Kubernetes集群中安装和部署，通过插入sidecar代理（即Envoy）来增强应用程序的网络和安全性能。
+### 给 Worker 节点打标签
+- 以决定内外网的入口分别落在哪些机器上，实现物理层面的隔离。
+
+```sh
+# 假设 node1 和 node2 作为外网流量入口 (放在 DMZ 区)
+kubectl label nodes localhost-k8s-worker-01 ingress-type=external
+kubectl label nodes localhost-k8s-worker-02 ingress-type=external
+kubectl get node localhost-k8s-worker-{01,02} --show-labels
+
+# 假设 node3 和 node4 作为内网流量入口 (办公网可达)
+kubectl label nodes localhost-k8s-worker-03 ingress-type=internal
+kubectl label nodes localhost-k8s-worker-04 ingress-type=internal
+kubectl get node localhost-k8s-worker-{03,04} --show-labels
+
+# 验证
+kubectl get node -o wide --show-labels | grep ingress
+```
+
+### 准备 Traefik
+```sh
+# 添加官方 Traefik Helm repo
+helm repo add traefik https://traefik.github.io/charts
+helm repo update
+
+# 创建面向公网和内网流量的 namespace 
+kubectl create namespace traefik-external
+kubectl create namespace traefik-internal
+
+# 拉取 chart
+helm pull traefik/traefik --version 35.2.0
+```
+
+#### 面向公网流量
+- 这份配置负责处理来自互联网的流量，通常不信任外部来源，所以我们需要它作为默认的 IngressClass，并且绑定到 external 标签的节点上。
+
+```yaml {filename="values-traefik-35.2.0-external.yaml"}
+# values-external.yaml
+globalArguments:
+  - "--global.checknewversion=false"
+  - "--global.sendanonymoususage=false"
+
+ingressClass:
+  enabled: true
+  isDefaultClass: true # 设置为集群默认的 Ingress，通常外网业务较多
+  name: traefik-external
+
+providers:
+  kubernetesCRD:
+    enabled: true
+    ingressClass: traefik-external
+    allowCrossNamespace: true
+  kubernetesIngress:
+    enabled: true
+    ingressClass: traefik-external
+
+deployment:
+  kind: DaemonSet
+
+# 开启主机网络，直接监听宿主机的 80/443
+hostNetwork: true
+# 🚨 关键：使用 hostNetwork 时，必须修改 dnsPolicy，否则 Traefik 无法解析集群内的 Service 域名
+dnsPolicy: ClusterFirstWithHostNet
+
+nodeSelector:
+  ingress-type: external # 精准调度到外网节点
+
+tolerations:
+  - key: "node-role.kubernetes.io/master"
+    operator: "Exists"
+    effect: "NoSchedule"
+  - key: "node-role.kubernetes.io/control-plane"
+    operator: "Exists"
+    effect: "NoSchedule"
+
+ports:
+  web:
+    port: 8000
+    expose: true
+    exposedPort: 80
+    # 如果外网前面也有 LVS/Nginx 四层代理，也需要开启 proxyProtocol
+    # proxyProtocol:
+    #   trustedIPs:
+    #     - "10.0.x.x/24" # 外网 LB 的内网 IP 网段
+  websecure:
+    port: 8443
+    expose: true
+    exposedPort: 443
+  traefik:
+    port: 9000
+    expose: true
+    exposedPort: 9000
+
+service:
+  enabled: true
+  type: ClusterIP # 因为用了 hostNetwork，Service 类型用默认的 ClusterIP 即可，不需要 NodePort 或 LoadBalancer
+
+logs:
+  access:
+    enabled: true
+```
+
+#### 面向内网流量
+这份配置专供内部员工通过 Nginx 四层 LB 访问，核心区别在于 ingressClass 的名称、节点调度标签，以及强制开启的 proxyProtocol。
+```yaml {filename="values-traefik-35.2.0-internal.yaml"}
+globalArguments:
+  - "--global.checknewversion=false"
+  - "--global.sendanonymoususage=false"
+
+ingressClass:
+  enabled: true
+  isDefaultClass: false # 必须为 false，避免与外网冲突
+  name: traefik-internal
+
+providers:
+  kubernetesCRD:
+    enabled: true
+    ingressClass: traefik-internal
+    allowCrossNamespace: true
+  kubernetesIngress:
+    enabled: true
+    ingressClass: traefik-internal
+
+deployment:
+  kind: DaemonSet
+
+# 开启主机网络
+hostNetwork: true
+dnsPolicy: ClusterFirstWithHostNet
+
+nodeSelector:
+  ingress-type: internal # 精准调度到内网节点
+
+tolerations:
+  - key: "node-role.kubernetes.io/master"
+    operator: "Exists"
+    effect: "NoSchedule"
+  - key: "node-role.kubernetes.io/control-plane"
+    operator: "Exists"
+    effect: "NoSchedule"
+
+ports:
+  web:
+    port: 8080
+    expose:
+      default: true
+    exposedPort: 80
+    # http 重定向到 https
+    redirections:
+      entryPoint:
+        to: websecure
+        scheme: https
+        permanent: true # 开启 301 永久重定向
+    # 必须开启：接收 Nginx 传过来的真实员工办公网 IP
+    proxyProtocol:
+      trustedIPs:
+        - "10.0.0.80/32" # 替换为内网 Nginx LB 所在的网段或具体 IP
+  websecure:
+    port: 8443
+    expose:
+      default: true
+    exposedPort: 443
+    # 必须开启：接收 Nginx 传过来的真实员工办公网 IP 
+    proxyProtocol:
+      trustedIPs:
+        - "10.0.0.80/32" # 替换为内网 Nginx LB 所在的网段或具体 IP
+  traefik:
+    port: 9000
+    expose:
+      default: true
+    exposedPort: 9000
+
+service:
+  enabled: true
+  type: ClusterIP
+
+logs:
+  access:
+    enabled: true
+
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 0 # DaemonSet 不支持 maxSurge，必须设为 0
+```
+
+### 安装/升级 Traefik
+```sh
+# 外部 Ingress Controller
+helm upgrade -i traefik-external ./traefik-35.2.0.tgz \
+  -n traefik-external \
+  --values values-traefik-35.2.0-external.yaml
+
+# 内部 Ingress Controller
+helm upgrade -i traefik-internal ./traefik-35.2.0.tgz \
+  -n traefik-internal \
+  --values values-traefik-35.2.0-internal.yaml
+```
+注：这里的第一个 `traefik-external` 是 Helm Release 的名字，第二个 `-n traefik-internal` 是刚才创建的 Namespace 名字，两者同名在运维管理中是非常清晰的好习惯。
+
+### LB 配置
+#### 内网 LB
+```conf {filename="/etc/nginx/stream.d/lb-intranet.conf"}
+upstream traefik_internal_http {
+    server 10.0.0.103:8080 max_fails=3 fail_timeout=10s;
+    server 10.0.0.203:8080 max_fails=3 fail_timeout=10s;
+}
+
+upstream traefik_internal_https {
+    server 10.0.0.103:8443 max_fails=3 fail_timeout=10s;
+    server 10.0.0.203:8443 max_fails=3 fail_timeout=10s;
+}
+
+# 监听内网 LB 的 80 端口，转发到后端的 8080
+server {
+    listen 80;
+    proxy_pass traefik_internal_http;
+    
+    # 开启 PROXY Protocol 发送真实客户端 IP
+    proxy_protocol on;
+}
+
+# 监听内网 LB 的 443 端口，转发到后端的 8443
+server {
+    listen 443;
+    proxy_pass traefik_internal_https;
+    
+    # 开启 PROXY Protocol 发送真实客户端 IP
+    proxy_protocol on;
+}
+```
+
+### 验证
+```sh
+kubectl get ingressclasses -A -o wide
+
+# 而后通过 LB 访问测试
+```
