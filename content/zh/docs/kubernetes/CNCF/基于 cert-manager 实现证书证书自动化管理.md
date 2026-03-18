@@ -3,7 +3,7 @@ title: "基于 cert-manager 实现证书证书自动化管理"
 ---
 
 
-## Cert-Manager 概述
+## 一、Cert-Manager 概述
 cert-manager 是 Kubernetes 的原生证书管理器（CRD 控制器），它能够为 Kubernetes 或 OpenShift 集群中的工作负载创建 TLS 证书，并在证书到期前自动续订证书。
 
 它的作用是监控 Kubernetes 中的 Certificate 资源，自动向配置的证书颁发者（Issuer）申请证书，获取到证书后生成包含私钥和证书的 Kubernetes Secret（signed keypair），该 Secret 由应用程序 Pod 挂载或由 Ingress 控制器使用。
@@ -18,9 +18,10 @@ cert-manager 可以从各种证书颁发机构获取证书，包括： Let's Enc
 
 ---
 
-## Cert-Manager 架构
-<!-- {{< figure src="/http/high-level-overview.svg" alt="图片描述" title="图片标题" caption="图片说明" align="center" >}} -->
-{{< figure src="/http/high-level-overview.svg" align="center" >}}
+### 1. 架构
+![](/docs/kubernetes/cncf/cert-manager-overview.svg)
+
+
 
 **Issuers**（证书颁发者）图中展示了 cert-manager 配置的多个 Issuer 或 ClusterIssuer，这些是不同的证书来源：
 - **letsencrypt-prod**：Let's Encrypt 生产环境，用于颁发真实可信的公网证书。
@@ -32,7 +33,7 @@ cert-manager 可以从各种证书颁发机构获取证书，包括： Let's Enc
 
 **Certificates**（证书资源）这是 Kubernetes 中的 cert-manager 自定义资源（Certificate CR），代表你想要申请的证书。图中举了两个例子：
 - `foo.bar.com` `Issuer: cyberark-saas`（使用 CyberArk 的 SaaS 服务来签发这个域名证书）
-- `example.com / www.example.com` `Issuer: letsencrypt-prod`（使用 Let's Encrypt 生产环境签发这个域名证书）
+- `llinux.cn / www.llinux.cn` `Issuer: letsencrypt-prod`（使用 Let's Encrypt 生产环境签发这个域名证书）
 
 
 **Kubernetes Secret：**
@@ -49,7 +50,7 @@ cert-manager 可以从各种证书颁发机构获取证书，包括： Let's Enc
 2. cert-manager 监听到这个 Certificate 资源。
 3. cert-manager 根据指定的 Issuer 去对应的证书颁发机构申请证书（可能需要 ACME challenge、Vault API 调用等）。
 4. 证书签发成功后，cert-manager 生成或更新一个 Kubernetes Secret（包含私钥 + 证书）。
-5. 你的应用（如 Ingress Controller）使用这个 Secret 来启用 HTTPS。
+5. 应用（如 Ingress Controller）使用这个 Secret 来启用 HTTPS。
 
 **这个架构的优势：**
 - 统一管理：所有证书都通过 cert-manager 集中自动化管理，无需手动申请和续期。
@@ -59,7 +60,7 @@ cert-manager 可以从各种证书颁发机构获取证书，包括： Let's Enc
 
 ---
 
-## Cert-Manager 核心组件
+### 2. 核心组件
 
 1. **cert-manager-controller**（主控制器 Deployment）  
    - 这是 cert-manager 的核心大脑。  
@@ -93,7 +94,7 @@ cert-manager 可以从各种证书颁发机构获取证书，包括： Let's Enc
 这些组件协同工作，确保 cert-manager 在 Kubernetes 中实现自动化、安全的 TLS 证书管理。
 
 ---
-## Cert-Manager CRDs
+### 3. 相关 CRD 说明
 cert-manager 的 **API** 主要基于 Kubernetes 的 **Custom Resource Definitions (CRDs)**，所有自定义资源都属于 API Group `cert-manager.io`（核心部分）和 `acme.cert-manager.io`（ACME 特定部分）。
 
 cert-manager 定义了以下核心 CRDs（可以通过 `kubectl get crd | grep cert-manager.io` 查看）：
@@ -117,24 +118,57 @@ cert-manager 定义了以下核心 CRDs（可以通过 `kubectl get crd | grep c
 
 ---
 
-## Cert-Manager 部署
-### Helm
-```yaml
+## 二、Cert-Manager 部署
+### 1. 基于 Helm
+前期准备：
+```sh
 helm repo add cert-manager https://charts.jetstack.io
 
 helm repo update cert-manager
 
 helm pull cert-manager/cert-manager --version v1.16.5
+```
 
-helm show values cert-manager/cert-manager --version 1.16.5 > values-cert-manager-v1.16.5.yaml
+准备 values 文件：
+```yaml {filename="values-cert-manager-v1.16.5.yaml"}
+# 1. 自动安装 CRD（Certificate, Issuer 等资源定义）
+installCRDs: true
 
-# 修改 values-cert-manager-v1.16.5.yaml 文件
-...
-crds:
-  enabled: true # 启用CRD
-...
+# 2. 副本数配置 (2-3 副本保证高可用)
+replicaCount: 3
 
-# 安装/升级
+# 3. 镜像仓库配置 (针对的内网环境，如果镜像已导入私有仓库，需取消注释并修改)
+# image:
+#   repository: "harbor.bj.internal.llinux.cn/cert-manager/cert-manager-controller"
+# webhook:
+#   image:
+#     repository: "harbor.bj.internal.llinux.cn/cert-manager/cert-manager-webhook"
+# cainjector:
+#   image:
+#     repository: "harbor.bj.internal.llinux.cn/cert-manager/cert-manager-cainjector"
+
+# 4. 资源限制 (生产红线：防止证书签发过程中 CPU 突发影响业务)
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# 5. 开启 Prometheus 监控 (用来监控证书是否即将过期)
+prometheus:
+  enabled: true
+  servicemonitor:
+    enabled: false # 如果装了 Prometheus Operator，开启此项可自动发现监控指标
+
+# 6. 容忍度与亲和性 (可选，如果想让证书组件跑在特定的管理节点上)
+# nodeSelector:
+#   node-role: management
+```
+
+安装/升级：
+```sh
 helm upgrade --install cert-manager ./cert-manager-v1.16.5.tgz \
   --version 1.16.5 \
   --namespace cert-manager \
@@ -154,10 +188,7 @@ kubectl get crd | grep cert-manager
 - 潜在的资源覆盖、错误或集群不稳定。
 
 
-## Cert-Manager 使用
-
-### 自建 CA 并签发应用证书
-
+## 三、通过自建 CA 签发证书（适合纯内网环境）
 **目录结构**
 ```
 cert-manager/
@@ -171,7 +202,7 @@ cert-manager/
 │       └── deployment.yaml
 ```
 
-#### 创建自签名的根 CA 证书
+### 1. 创建自签名的根 CA 证书
 
 **01-root-ca-selfsigned-ClusterIssuer.yaml**
 - 创建 SelfSigned ClusterIssuer（一次性）；
@@ -244,7 +275,7 @@ spec:
 kubectl apply -f .
 ```
 
-#### 用自建根 CA 签发应用证书
+### 2. 用自建根 CA 签发应用证书
 
 ```yaml {filename="/root/k8s/manifests/harbor/certificate-harbor.yaml"}
 apiVersion: cert-manager.io/v1
@@ -263,12 +294,193 @@ spec:
     name: root-ca
     kind: ClusterIssuer
   dnsNames:
-    - harbor.bj.internal.example.com
-  commonName: harbor.bj.internal.example.com
+    - harbor.bj.internal.llinux.cn
+  commonName: harbor.bj.internal.llinux.cn
 ```
 
 
-### 应用中引用证书
+### 3. 应用中引用证书
+
+
+
+
+## 四、通过 Let's Encrypt 自动签发证书（适合能联网环境）
+Let's Encrypt 会通过 DNS 服务商的 API 自动在域名下添加一条临时的 TXT 记录，只要验证成功，证书就会下发到 K8s 集群里。
+
+### 1. 相关术语说明
+#### 1.1 Let's Encrypt
+简单来说，它是一个**全球公认的、免费的、公益性质的 CA（证书颁发机构）**。
+
+在它出现之前，企业要给网站上 HTTPS，必须花钱找各大商业机构（如 DigiCert、Symantec）购买证书，而且流程基本是人工审批。Let's Encrypt 的诞生改变了游戏规则：
+* **完全免费：** 不花一分钱就能拿到和商业机构一样拥有绿色安全锁的受信任证书。
+* **强制自动化：** 它颁发的证书有效期**只有 90 天**。它的初衷就是倒逼运维人员不要再手动去申请和部署证书，而是利用机器和代码（比如 cert-manager）来实现全自动的无感轮转。
+
+#### 1.2 DNS-01 验证
+Let's Encrypt 作为一个权威机构，绝不会随便给一个路人颁发 `llinux.cn` 的证书，它必须先证明**你确实是这个域名的真正拥有者**。
+
+证明方式主要有两种：HTTP-01（往网站根目录放个特定文件让它访问）和 **DNS-01（最适合内网的方案）**。
+
+**DNS-01 的工作原理如下：**
+1. K8s 集群（cert-manager）向 Let's Encrypt 发起申请：“我要一张 `llinux.cn` 的证书”。
+2. Let's Encrypt 会返回一串随机的字符串令牌（Token），并要求：“如果你真的是拥有者，请去 DNS 解析后台，添加一条名为 `_acme-challenge.llinux.cn` 的 TXT 记录，内容填这段字符串”。
+3. K8s 集群按照要求，把记录加到了 DNS 服务器上。
+4. Let's Encrypt 会去查询**全球公共的 DNS 系统**。只要它能查到这条 TXT 记录，且字符串匹配，它就立刻认定你是主人，并把私钥和证书数据打包发给 K8s 集群。
+
+**核心优势：** Let's Encrypt 的服务器**全程不需要主动连接你内网的任何服务器和 IP**。它只关心公共 DNS 上的记录。这就完美避开了内网环境无法被公网访问的痛点。
+
+### 2. 获取 DNS 服务商的 API Token
+#### 2.1 Cloudflare
+**第一步：获取 Cloudflare API Token (最小权限原则)**
+
+千万不要用 Global API Key。我们需要创建一个专门给 `cert-manager` 使用的令牌：
+
+1.  登录 Cloudflare，进入 **My Profile > API Tokens**。
+2.  点击 **Create Token** -> **Create Custom Token**。
+3.  配置权限（Permissions）：
+    * `Zone` - `DNS` - `Edit`
+    * `Zone` - `Zone` - `Read`
+4.  资源范围（Zone Resources）：
+    * `Include` - `Specific zone` - `选择你的域名 (llinux.cn)`
+5.  生成后，**保存好这串 Token**。
+
+**第二步：创建保存 Token 的 Secret**
+
+这个 Secret 必须放在 `cert-manager` 所在的命名空间里。
+
+```yaml  {filename="/root/k8s/manifests/cert-manager/cf-api-token-secret.yaml"}
+# cf-api-token-secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cloudflare-api-token-secret
+  namespace: cert-manager
+type: Opaque
+stringData:
+  api-token: <你的Cloudflare-API-Token>
+```
+执行：`kubectl apply -f cf-api-token-secret.yaml`
+
+**第三步：配置 ClusterIssuer (全局签发器)**
+
+`ClusterIssuer` 是集群级别的资源，配置一次，全集群所有 Namespace 都能用。
+
+```yaml  {filename="/root/k8s/manifests/cert-manager/cluster-issuer-letsencrypt-cloudflare.yaml"}
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-cloudflare
+spec:
+  acme:
+    # 证书快过期或续签失败时，Let's Encrypt 会发邮件通知
+    email: <你的邮箱地址>
+    # 生产环境地址
+    server: https://acme-v02.api.letsencrypt.org/directory
+    # 测试环境地址（Let's Encrypt 生产环境对同一域名的签发频率有限制，如果在调试阶段，可以先使用下面的测试地址）
+    # server: https://acme-staging-v02.api.letsencrypt.org/directory
+    # 存储 ACME 账户私钥的 Secret 名字，自动生成
+    privateKeySecretRef:
+      name: letsencrypt-cloudflare-account-key
+    solvers:
+    - dns01:
+        cloudflare:
+          apiTokenSecretRef:
+            name: cloudflare-api-token-secret
+            key: api-token
+```
+执行：`kubectl apply -f cluster-issuer-letsencrypt-cloudflare.yaml`后，在执行 `kubectl get clusterissuers.cert-manager.io` 可以看到 `letsencrypt-cloudflare` 这个 ClusterIssuer 已经创建成功。
+
+
+#### 2.2 阿里云
+整体的验证逻辑和 Cloudflare 一模一样，但在 K8s 的落地组件上有一个关键的架构差异：
+
+**架构差异：**
+`cert-manager` 的官方核心代码库里，原生地内置了对 Cloudflare、AWS Route53、Google Cloud DNS 的支持（俗称“一等公民”）。但是**它没有内置阿里云 DNS**。为了保持核心轻量，官方把诸如阿里云、腾讯云等厂商的支持剥离到了 Webhook 插件体系中。
+
+**阿里云方案落地步骤：**
+
+1. **准备阿里云 RAM 子账号：**
+   在阿里云控制台创建一个专门的 RAM 用户，仅赋予 `AliyunDNSFullAccess`（或者更严格的细粒度权限），并生成对应的 `AccessKey ID` 和 `AccessKey Secret`。
+2. **部署阿里云 Webhook 插件：**
+   不能只装 cert-manager，还需要在 K8s 里额外装一个小插件（通常叫 `cert-manager-webhook-alidns`）。
+   ```bash
+   # 通常是通过 Helm 或者单独的 YAML 部署这个 Webhook
+   helm install alidns-webhook alidns-webhook/alidns-webhook --namespace cert-manager
+   ```
+3. **把 RAM 密钥存入 Secret：**
+   ```yaml
+   apiVersion: v1
+   kind: Secret
+   metadata:
+     name: alidns-secret
+     namespace: cert-manager
+   stringData:
+     access-key: "阿里云AccessKey"
+     secret-key: "阿里云SecretKey"
+   ```
+4. **修改 ClusterIssuer (这是最大的区别)：**
+   需要告诉 cert-manager，遇到 DNS-01 验证时，把任务转发给那个阿里云 Webhook 插件去处理。
+   ```yaml
+   apiVersion: cert-manager.io/v1
+   kind: ClusterIssuer
+   metadata:
+     name: letsencrypt-aliyun
+   spec:
+     acme:
+       email: your-email@example.com
+       server: https://acme-v02.api.letsencrypt.org/directory
+       privateKeySecretRef:
+         name: letsencrypt-aliyun-account-key
+       solvers:
+       - dns01:
+           webhook: # 注意这里不再是写 cloudflare，而是指向外部的 webhook
+             groupName: acme.yourcompany.com
+             solverName: alidns
+             config:
+               region: ""
+               accessKeySecretRef:
+                 name: alidns-secret
+                 key: access-key
+               secretKeySecretRef:
+                 name: alidns-secret
+                 key: secret-key
+   ```
+
+
+### 3. 在 Ingress 中启用自动签发
+
+以 Longhorn 为例，现在“发证工厂”已经开工了。只需要在 Longhorn 的 Ingress 里打个“标签”（Annotation），`cert-manager` 就会监控到并自动干活。
+
+```yaml
+ingress:
+  enabled: true
+  ingressClassName: "traefik-internal"
+  annotations:
+    # 核心：指定刚才创建的签发器
+    cert-manager.io/cluster-issuer: "letsencrypt-cloudflare"
+  
+  host: "longhorn.bj.internal.llinux.cn"
+  
+  tls: 
+    - secretName: longhorn-tls-cert # 证书最终会存到这个 Secret 里
+      hosts:
+        - longhorn.bj.internal.llinux.cn
+```
+
+### 4. 验证
+执行 `helm upgrade` 后，可以通过以下“三板斧”观察进度：
+
+1.  **查看证书申请状态：**
+    `kubectl get certificate -n longhorn`
+    - 预期：READY 应该在几分钟后变为 `True`。
+2.  **查看具体的挑战过程：**
+    `kubectl get challenge -n longhorn`
+    - 如果卡住了，这里会显示原因（比如 Cloudflare Token 权限不对）。
+    - 如果创建成功，这里将不在显示。
+3.  **查看 Secret 是否生成：**
+    `kubectl get secret  -n longhorn longhorn.local-tls`
+    - 如果这个 Secret 出现了，说明证书已经成功下发到集群中。
+
+
 
 ## 监控 Cert-Manager
 ### Prometheus 配置

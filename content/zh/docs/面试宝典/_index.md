@@ -772,9 +772,10 @@ PS：分位数是把数据平均分成多份，分别统计
 {{< /collapse >}}
 
 {{< collapse summary="***Prometheus 查询函数中 rate 和 irate 的区别？**" >}}
-- rate 计算的是单位时间内的平均增长速率，适合像 CPU 使用率、磁盘 IO 这种场景，线条比较平滑。
-- irate 是高灵敏函数，计算的是单位时间内**最后两个数据点的瞬时速率**，适合像 HTTP 请求速率（QPS）、突发性网络流量这种场景，线条比较陡峭。
-- 简单来讲，irare 更加敏感，它能看到一些瞬时、突发的情况。而rate 更平滑，
+首先，rate 和 irate 都是计算 counter 类型指标的增长速率，但 irate 是高灵敏函数，他会选择单位时间内的最后两个值进行计算，而 rate 是选择第一个和最后一个进行计算。
+- rate 适合 CPU 使用率、磁盘 IO 这种场景，线条比较平滑。
+- irate 适合 HTTP 请求速率（QPS）、突发性网络流量这种场景，线条比较陡峭。
+简单来讲，irare 更加敏感，它能看到一些瞬时、突发的情况。而 rate 更平滑，
 {{< /collapse >}}
 
 {{< collapse summary="**Prometheus 主要由哪些组件组成？**" >}}
@@ -885,6 +886,16 @@ Prometheus 使用多维数据模型，每个时间序列由以下部分组成：
 {{< /collapse >}}
 
 ## CI/CD
+
+{{< collapse summary="***cicd 使用中遇到什么问题，如果处理解决的？**" >}}
+1. xxx
+{{< /collapse >}}
+
+{{< collapse summary="***cicd 如何触发自动构建？**" >}}
+1. xxx
+{{< /collapse >}}
+
+
 {{< collapse summary="**如何配置CICD流水线？**" >}}
 Jenkins ：
 - 配置 Gitlab 登录凭据，定义 pipeline 或 Jenkinsfile ，添加构建流程、构建分支等。
@@ -1047,6 +1058,87 @@ Docker 在 bridge 网络模式下，默认会创建一个 docker0 的网桥，�
 {{< collapse summary="***Pod 是如何调度的？**" >}}
 1. xxx
 {{< /collapse >}}
+
+{{< collapse summary="***k8s pod 状态不正常如何排查？**" >}}
+1. `kubectl get pod -n <namespace>` 查看 Pod 的 STATUS
+    - Pending：Pod 已创建，但还没有被调度到节点上。
+    - Failed：表示 Pod 中的容器以非零状态码退出。
+    - Unknown：Kubelet 无法获取 Pod 的状态。
+    - CrashLoopBackOff（容器状态）：表示容器启动失败并多次重启失败。
+2. `kubectl describe pod <pod-name> -n <namespace>` 查看 Pod 的详细信息，包括事件（Events）、容器状态（Container Statuses）、挂载的卷（Mounts）等。
+    - xxx
+    - xxx
+3. `kubectl logs <pod-name> -n <namespace>` 查看 Pod 的日志，检查是否有异常输出。
+    - xxx
+    - xxx
+4. `kubectl exec -it <pod-name> -n <namespace> -- /bin/bash` 进入 Pod 内的 Shell 环境，检查容器是否正常运行。
+    - xxx
+    - xxx
+5. `kubectl get events -n <namespace>` 查看 Pod 的事件记录，检查是否有异常事件。
+    - xxx
+    - xxx
+
+{{< /collapse >}}
+
+{{< collapse summary="***k8s 容忍度和打标签什么命令？**" >}}
+
+```sh
+# 给指定的节点添加一个标签（例如 disktype=ssd）：
+kubectl label nodes <node-name> disktype=ssd
+```
+
+污点（Taint）是打在 Node 上的，用来排斥 Pod；而容忍度（Toleration）是配置在 Pod 上的，用来允许 Pod 调度到有对应污点的 Node 上。
+
+```sh
+# 给节点添加一个键为 key1，值为 value1，效果为 NoSchedule 的污点：
+kubectl taint nodes <node-name> key1=value1:NoSchedule 
+
+# 容忍度没有直接的命令行参数，它必须写在 Pod 的 YAML 配置文件中的 spec.tolerations 字段下。
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-pod
+spec:
+  containers:
+  - name: my-container
+    image: nginx
+  # 在这里配置容忍度
+  tolerations:
+  - key: "key1"
+    operator: "Equal"    # 可选 Equal (等于) 或 Exists (存在此key即可)
+    value: "value1"
+    effect: "NoSchedule"
+```
+{{< /collapse >}}
+
+{{< collapse summary="***k8s 如何查询 pod 或者 node 资源使用率？**" >}}
+- 必须已经安装并运行了 Metrics Server。如果没有安装，执行 kubectl top 命令时通常会收到类似 Metrics API not available 的报错。
+- kubectl top 只能提供**实时（当前时刻）**的资源使用快照。
+```sh
+# 查看所有节点的资源使用率：
+kubectl top node
+
+# 查看特定节点的资源使用率：
+kubectl top node <节点名称>
+
+# 查看当前默认命名空间下所有 Pod 的使用率：
+kubectl top pod
+
+# 查看特定命名空间下的 Pod：
+kubectl top pod -n <命名空间名称>
+
+# 查看所有命名空间下的 Pod：
+kubectl top pod -A
+
+# 查看 Pod 内每个容器的详细使用率：
+kubectl top pod --containers
+
+# 按 CPU 或内存消耗进行排序：
+kubectl top pod --sort-by=cpu
+kubectl top pod --sort-by=memory
+```
+{{< /collapse >}}
+
 
 {{< collapse summary="**pause 容器是干嘛的？**" >}}
 - 每个 Pod 启动时，都会启动一个 pause 容器，这个容器用于维护 Pod 的 namespaces，在一个 Pod 中，多个业务容器共享以下命名空间：
