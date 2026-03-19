@@ -2,7 +2,7 @@
 title: "GitLab"
 ---
 
-# Gitlab 概述
+## Gitlab 概述
 
 https://about.gitlab.com/
 
@@ -12,12 +12,13 @@ https://gitlab.cn/
 - 与之类似的还有 Github、Gitee 等...
 - 代码在提交到 GitLab 前可以先放在本地仓库(这个时候没有网络也可以)，有网络时可以选择提交到GitLab主服务器，这样可以减轻 GitLab 主服务器的负载压力
 
+剥开 GitLab 庞杂的功能外衣，它的本质其实就是一个**围绕“代码”的生命周期管理系统**。它的核心目的只有三个：
+1. **存代码**（安全、可靠地保存和追踪每一次变更）。
+2. **改代码**（多人协作、审查，确保代码质量）。
+3. **跑代码**（自动化测试、构建和部署）。
 
 
-
-
-# Gitlab 数据存储方式
-
+**Gitlab 数据存储方式：**
 - 会将提交到仓库的代码或数据进行哈希值效验，哈希值相同则认为是同一个文件，进而不会进行二次上传（类似百度云盘上传文件的原理）；
 - 然后将新的数据发起一个指针指向旧的哈希值与之相同的文件（新的文件和旧文件类似于软连接关系）；
   - 优点：节省了空间又加快了代码提交速度；
@@ -26,14 +27,69 @@ https://gitlab.cn/
 
 
 
+## Gitlab 安装
+参考文档：
+- https://docs.gitlab.com/install/
+- https://about.gitlab.cn/install/
+- https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/README.md
 
-# Gitlab Deploy
+### docker-compose
+**1. 准备持久化目录**
 
-https://about.gitlab.cn/install/
+首先，在宿主机上创建用于存放 GitLab 配置、日志和核心数据的目录：
+```bash
+sudo mkdir -p /srv/gitlab/config
+sudo mkdir -p /srv/gitlab/logs
+sudo mkdir -p /srv/gitlab/data
+```
 
-https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/README.md
+**2. 编写 `docker-compose.yml`**
 
-## apt / yum
+```yaml {filename="/srv/gitlab/docker-compose.yml"}
+version: '3.6'
+services:
+  gitlab:
+    image: 'gitlab/gitlab-ce:18.6.6-ce.0'
+    container_name: gitlab
+    restart: always
+    hostname: '10.0.0.96' # 替换为实际域名或宿主机IP
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        # 外部访问的URL，如果是内网可以直接写IP，例如 'http://192.168.1.100'
+        external_url 'http://10.0.0.96'
+        
+        # 设置正确的时区，确保代码提交时间和定时任务不出错
+        gitlab_rails['time_zone'] = 'Asia/Shanghai'
+        
+        # 配置 SSH 克隆时显示的端口（与下方 ports 映射的 2222 对应）
+        gitlab_rails['gitlab_shell_ssh_port'] = 2222
+    ports:
+      - '80:80'
+      - '443:443'
+      - '2222:22' # 映射容器内的22端口到宿主机的2222，防止与宿主机SSH冲突
+    volumes:
+      - '/srv/gitlab/config:/etc/gitlab'
+      - '/srv/gitlab/logs:/var/log/gitlab'
+      - '/srv/gitlab/data:/var/opt/gitlab'
+    shm_size: '256m' # 官方建议值，防止高负载下崩溃
+```
+
+**3. 启动并获取初始密码**
+
+```bash
+cd /srv/gitlab
+docker compose up -d
+```
+GitLab 的启动相对较慢（通常需要 2-5 分钟），可以通过 `docker logs -f gitlab` 观察启动日志。
+
+当容器完全启动后，GitLab 会自动生成一个初始的 `root` 密码，可以通过以下命令查看：
+```bash
+sudo docker exec -it gitlab grep 'Password:' /etc/gitlab/initial_root_password
+```
+> (注意：这个文件会在 24 小时后自动删除，需尽快登录 Web 界面并修改 root 密码。)
+
+
+### apt / yum
 
 - https://mirrors.bfsu.edu.cn/gitlab-ce/
 - https://mirrors.tuna.tsinghua.edu.cn/gitlab-ce/
@@ -46,7 +102,7 @@ yum -y install /usr/local/src/gitlab-ce-14.5.4-ce.0.el8.x86_64.rpm
 apt install ./gitlab-ce_15.4.3-ce.0_amd64.deb
 ```
 
-### 修改配置文件
+修改配置文件：
 
 - 注意不同版本配置文件间的差异
 
@@ -65,11 +121,11 @@ gitlab_rails['smtp_tls'] = true
 gitlab_rails['gitlab_email_from'] = "767483070@qq.com"
 ```
 
-### 初始化
+初始化：
 
 - `gitlab-ctl reconfigure`
 
-### 获取初始密码
+获取初始密码：
 
 - 除非您在安装过程中指定了自定义密码，否则将随机生成一个密码并存储在 /etc/gitlab/initial_root_password 文件中(出于安全原因，24 小时后，此文件会被第一次 `gitlab-ctl reconfigure` 自动删除，因此若使用随机密码登录，建议安装成功初始登录成功之后，立即修改初始密码）
 - 使用此密码和用户名 `root` 登录。
@@ -82,7 +138,7 @@ Password: JU5s9BMVYz/D1KCfJ36DrSsDOVtLak3jbHtwccu/UtY= #密码，默认账号为
 ...
 ```
 
-### 启动gitlab
+启动gitlab：
 
 ```bash
 gitlab-ctl start
@@ -92,7 +148,7 @@ gitlab-ctl start
 
 
 
-# Gitlab 相关文件
+## Gitlab 相关文件
 
 ```bash
 /etc/gitlab # 配置文件目录
@@ -113,7 +169,7 @@ gitlab-ctl start
 
 
 
-# Gitlab 配置文件说明
+## Gitlab 配置文件说明
 
 https://docs.gitlab.cn/jh/administration/pages/index.html
 
@@ -141,9 +197,9 @@ gitlab_rails['gitlab_email_from'] = "rootroot25@163.com"
 
 
 
-# Gitlab cmd
+## Gitlab cmd
 
-## gitlab-backup
+### gitlab-backup
 
 - gitlab备份命令
 
@@ -154,7 +210,7 @@ gitlab_rails['gitlab_email_from'] = "rootroot25@163.com"
   restore #从备份中恢复数据
   ```
 
-## gitlab-ctl
+### gitlab-ctl
 
 - gitlab控制命令
 
@@ -169,25 +225,19 @@ gitlab_rails['gitlab_email_from'] = "rootroot25@163.com"
   kill # 强制关闭gitlab所有服务
   ```
 
-## gitlab-psql
+### gitlab-psql
 
 - 管理gitlab中的PostgreSQL数据库
 
-## gitlab-rails
 
-- ...
 
-## gitlab-rake
-
-- ....
-
-## gitlab-redis-cli
+### gitlab-redis-cli
 
 - 管理gitlab中的redis数据库
 
 
 
-# Gitlab security
+## Gitlab security
 
 - 可以选择登录界面禁止注册，如果是在内网 允许注册也没关系，因为注册完成后需要gitlab管理员进行审核
   - 禁止注册：设置 --> 一般的 --> 注册限制选项中全部取消勾选(注意不要改错，不要改成禁止登陆）
@@ -195,18 +245,18 @@ gitlab_rails['gitlab_email_from'] = "rootroot25@163.com"
 
 
 
-# Gitlab fork branch
+## Gitlab fork branch
 
 - 外部开发者可以将代码fork一份到自己的名称空间下，添加或修改代码等操作后再将代码发起合并请求，最后由被fork分支的管理员将代码进行合并，从而实现外部协同工作。
 
 
 
 
-# Gitlab 用户和管理
+## Gitlab 用户和管理
 
 - 创建不同的用户并分发不同的权限来实现安全管理
 
-## 创建用户
+### 创建用户
 
 - 以root身份登录 --> 菜单 --> 管理员 --> 概览 --> 用户 --> 新用户
   - ...
@@ -217,7 +267,7 @@ gitlab_rails['gitlab_email_from'] = "rootroot25@163.com"
 
 
 
-## 创建群组
+### 创建群组
 
 - 以root身份登录 --> 菜单 --> 管理员 --> 概览 --> 群组 --> 新建群组
   - ...
@@ -229,7 +279,7 @@ gitlab_rails['gitlab_email_from'] = "rootroot25@163.com"
 
 
 
-## 创建项目
+### 创建项目
 
 - 以root身份登录 --> 菜单 --> 管理员 --> 概览 --> 项目 --> 新建项目
   - **创建新项目**：一般都是创建空白项目
@@ -241,27 +291,27 @@ gitlab_rails['gitlab_email_from'] = "rootroot25@163.com"
 
 
 
-## 将用户添加到群组中
+### 将用户添加到群组中
 
 - 以root身份登录 --> 菜单 --> 管理员 --> 概览 --> 群组 --> 点击指定的群组(不点编辑)
   - 将用户加入到群组(如果这个群组有对应的项目 那么这个被添加的用户将会看到这个项目)
 
 
 
-## 将群组添加到项目中
+### 将群组添加到项目中
 
 - 以root身份登录 --> 菜单 --> 管理员 --> 概览 --> 项目 --> 点击指定的项目(不点编辑)
   - 将群组添加到项目中（**一般devadmin授予Owner权限，devuser授予developer权限**）
 
 
 
-## 角色权限说明
+### 角色权限说明
 
 - http://10.0.0.38/help/user/permissions
 
 
 
-## 用户管理注意事项
+### 用户管理注意事项
 
 - 建议为了安全考虑 关闭登录界面注册功能(注意不要改错，不要改成禁止登陆）
 - 创建用户时，不给开发创建组的权限(开发的leader可以给)
@@ -277,7 +327,7 @@ gitlab_rails['gitlab_email_from'] = "rootroot25@163.com"
 
 
 
-# Gitlab 数据备份与恢复
+## Gitlab 数据备份与恢复
 
 - https://docs.gitlab.com/ee/raketasks/backup_restore.html
 - https://docs.gitlab.cn/ee/raketasks/backup_restore.html
@@ -388,16 +438,6 @@ gitlab-backup restore 1634049833_2021_10_12_14.3.2_gitlab_backup.tar
 #恢复后启动服务
 gitlab-ctl start unicorn ; gitlab-ctl start sidekiq
 ```
-
-
-
-### 恢复脚本
-
-
-
-
-
-
 
 # Gitlab 密码找回
 
