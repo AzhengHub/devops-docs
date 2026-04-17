@@ -183,248 +183,7 @@ virsh list --all
 ```
 
 
-## 四、创建虚拟机
-### 1. 前期准备
-```sh
-# 建立一个标准目录存放镜像
-mkdir -p /data/kvm/iso # 存放ISO镜像文件
-mkdir -p /data/kvm/images  # 存放虚拟机磁盘文件
-```
 
-### 2. 使用 virt-install 创建虚拟机
-这是最常用、最规范的创建方式。
-
-#### 2.1 创建 ovs-br0 网桥
-```bash
-# 安装openvswitch
-apt install -y openvswitch-switch # Ubuntu
-yum install -y openvswitch # CentOS/Rocky
-
-# 启动并设置为开机自启
-systemctl enable --now openvswitch
-
-# 创建网桥
-ovs-vsctl add-br ovs-br0
-
-# 将业务口网卡 ens37 加入网桥
-# 注意：生产环境通常需要两块网卡，一块用于管理，一块用于业务流量，别加错，否则无法ssh连接了
-# 这里假设 ens37 是业务流量口，将其加入 ovs-br0 网桥
-ovs-vsctl add-port ovs-br0 ens37
-
-# 执行 ovs-vsctl show 验证
-    Bridge ovs-br0
-        Port ens37
-            Interface ens37
-        Port ovs-br0
-            Interface ovs-br0
-                type: internal
-
-
-# 设置网桥为混杂模式
-# 在某些物理交换机环境下，可能需要手动开启物理网卡的混杂模式，否则虚拟机流量可能无法进出：
-ip link set ovs-br0 promisc on
-
-
-```
-
-#### 2.2 RedHat 系
-```bash
-virt-install \
---name rocky-01 \
---vcpus 2 \
---memory 2048 \
---location /data/kvm/iso/Rocky-9.iso \
---disk path=/data/kvm/images/rocky-01.qcow2,size=20,format=qcow2,bus=virtio \ 
---network bridge=ovs-br0,virtualport_type=openvswitch,model=virtio \
---graphics none \
---extra-args 'console=ttyS0,115200n8 serial' \
---os-variant rockylinux9
-
-```
-* **`--disk ...,bus=virtio`**: **核心优化点**。使用 virtio 驱动，磁盘 I/O 性能比默认的 IDE/SATA 高出几个量级。
-* **`--network ...,model=virtio`**: 网卡同样使用 virtio 驱动，降低 CPU 中断损耗。此外还挂载到了 `ovs-br0` 网桥，实现了虚拟机与宿主机的网络通信。
-* **`--graphics none`**: 生产服务器通常不需要 VNC/显卡。
-* **`--extra-args ...`**: 配合 `--graphics none` 使用，将安装过程的输出重定向到当前终端（Console），这样直接在 SSH 窗口就能完成系统安装。
-* **`--os-variant`**: 告知 KVM 目标系统类型，它会自动优化 CPU 指令集和默认驱动配置。可用 `osinfo-query os` 查看支持列表。
-
-#### 2.3 Ubuntu 系
-
-```bash
-virt-install \
---name ubuntu-01 \
---vcpus 2 \
---memory 2048 \
---cdrom /data/kvm/iso/ubuntu-22.04.5-live-server-amd64.iso \
---disk path=/data/kvm/images/ubuntu-01.qcow2,size=20,format=qcow2,bus=virtio \
---network bridge=ovs-br0,virtualport_type=openvswitch,model=virtio \
---graphics vnc,listen=0.0.0.0 \
---os-variant ubuntu22.04
-```
-
-**修改点详细说明：**
-
-**1. 从 `--location` 改为 `--cdrom`**
-
-* **原因**：Ubuntu 22.04 的 Live ISO 结构与 RedHat 系不同，`virt-install` 无法直接从它的 ISO 中“提取”出内核来配合 `extra-args` 使用。
-* **后果**：由于使用了 `--cdrom`，原有的 `--extra-args`（用于串口控制台输出）将无法生效。
-
-**2. 从 `--graphics none` 改为 `--graphics vnc`**
-
-* **原因**：因为 `--cdrom` 模式无法直接将安装界面推送到的 SSH 串口（Terminal），必须通过 **VNC** 才能看到 Ubuntu 的安装紫色界面。
-* **配置**：`listen=0.0.0.0` 允许从本地电脑使用 VNC 客户端连接宿主机的 IP 来进行安装。
-
-**3. 修改 `--os-variant` 为 `ubuntu22.04`**
-
-* **原因**：这会告诉 KVM 使用适合 Ubuntu 22.04 的硬件抽象层配置。
-* **查询方式**：可以通过 `osinfo-query os | grep ubuntu` 确认的系统支持的确切名称。
-
-**4. 磁盘路径与名称**
-
-* **为了规范**，我把名称和磁盘路径改为了 `ubuntu-01`，避免和之前的 Rocky 混合。 
-
-
-### 3. 检查安装结果
-- 除了通过 VNC 查看安装过程，还可以通过下面的方式检查安装状态
-```sh
-# 查看虚拟机状态是否为 running
-virsh list --all
-
-# 查看网桥 ovs-br0 的状态，应该能看到一个以 vnet 开头的 Port 被自动加入到了 ovs-br0 中。
-ovs-vsctl show
-```
-
-### 4. 安装完成后的操作
-```sh
-# 设置开机自启（可选）
-virsh autostart ubuntu-01
-```
-
-## 五、虚拟机基础管理
-
-### 1. 管理工具
-#### RealVNC
-下载链接：https://www.realvnc.com/en/connect/download/viewer/
-
-命令里写了 `--graphics vnc,listen=0.0.0.0`，KVM 会启动一个 VNC 服务。但需要知道它监听在哪个端口（通常是从 5900 开始）。
-```sh
-# 查看虚拟机的 VNC 端口
-virsh vncdisplay ubuntu-01
-
-# 如果输出 :0，对应端口就是 5900。
-# 如果输出 :1，对应端口就是 5901，以此类推。
-```
-
-最后在本地电脑打开 VNC 客户端，输入 宿主机IP:5900 即可看到 Ubuntu 的安装界面。
-
-
-#### virsh 命令
-- virsh 是基于命令行的虚拟机管理工具，来自 libvirt-client 包；
-- 此工具基于 libvirtd 服务，此服务如果关闭或意外停止将无法继续使用 virsh 命令对虚拟机进行管理，但虚拟机本身依旧会正常运行（默认的 iptables规则与虚拟网卡等实现都是由 libvirtd 服务生成的）。
-- virsh 分为交互式与非交互式，交互式直接敲 virsh 后回车即可进入 virsh 命令行界面。非交互式则需要在命令后跟上具体的任务命令：
-  - 可以使用虚拟机名称、编号、UUID 来对虚拟机进行操作，但 UUID 最保险。
-| 任务 | 命令 |
-| --- | --- |
-| **只列出目前在运行的虚拟机** | `virsh list` |
-| **查看所有虚拟机（包括已关机）** | `virsh list --all` |
-| **启动虚拟机** | `virsh start ubuntu-01` |
-| **关闭虚拟机** | `virsh shutdown ubuntu-01` |
-| **强制断电** | `virsh destroy ubuntu-01` |
-| **暂停虚拟机** | `virsh suspend ubuntu-01` |
-| **恢复暂停的虚拟机** | `virsh resume ubuntu-01` | 
-| **查看虚拟机 UUID** | `virsh domuuid ubuntu-01` |
-| **通过 Console 连接** | `virsh console ubuntu-01` (退出按 `Ctrl + ]`) |
-| **设置开机自启** | `virsh autostart ubuntu-01`（本质上是在 /etc/libvirt/qemu/autostart/ 创建了一个软链接） |
-| **禁止开机自启** | `virsh autostart --disable ubuntu-01`（本质上是删除了 /etc/libvirt/qemu/autostart/ 下的软链接） |
-| **修改配置** | `virsh edit ubuntu-01` (需重启生效) |  
-| **查看磁盘信息** | `virsh domblklist ubuntu-01`|  
-| **查看虚拟机 XML 配置** | `virsh dumpxml ubuntu-01`（本质上是从 /etc/libvirt/qemu/ 目录下读取 XML 文件）|  
-
-
-这份总结已经非常全面，特别是你对“本质上是创建/删除软链接”的理解，说明你已经深入到了 Libvirt 的底层逻辑。
-
-关于 **QEMU Guest Agent (QGA)**，它是 SRE 提升虚拟机管理精细度的关键。目前的“高级功能”描述略显宽泛，因为即使不装 QGA，很多操作（如强制断电、基本信息查看）也能做。QGA 的真正价值在于**“从宿主机安全、优雅地感知和操作 Guest OS 内部”**。
-
-以下是润色后的版本，我帮你强化了 **SRE 实战场景**：
-
----
-
-#### QGA
-
-通过**QEMU Guest Agent** (QGA) 可以增强 virsh 功能，它是安装在虚拟机内部的一个守护进程（`qemu-guest-agent`）。它在宿主机与虚拟机之间开启了一个特殊的通信通道（Virtio-serial），使得 Libvirt 可以执行那些**必须进入系统内部才能完成**的任务。
-
-##### 1. QGA 核心增强功能
-
-* **优雅管理**：不通过发送 ACPI 信号，而是直接在虚拟机内部调用 `systemctl poweroff`，避免文件系统损坏。
-* **信息探测**：无需登录虚机，即可获取虚机内部的真实网卡 IP（包括多网卡、虚拟 IP）、用户登录情况及 OS 详细版本。
-* **文件系统冻结**：在进行虚拟机快照备份前，自动冻结（fsfreeze）磁盘 I/O，确保备份数据的一致性。
-* **重置密码**：在忘记密码时，直接从宿主机端注入新密码。
-
-##### 2. QGA 实战常用命令
-
-当虚拟机已安装并启动 QGA 服务后，可使用以下高级命令：
-
-| 任务 | 命令 | SRE 使用场景 |
-| --- | --- | --- |
-| **获取虚拟机时间** | `virsh domtime ubuntu-01` | 同步宿主机与虚机时间，防止时钟偏移影响日志分析 |
-| **查看内部网卡 IP** | `virsh domifaddr ubuntu-01 --source agent` | **最常用**：直接获取虚机内部真实 IP（支持多网卡环境） |
-| **安全关机** | `virsh shutdown ubuntu-01 --mode agent` | 比默认 ACPI 方式更稳定，确保数据库等应用安全关闭 |
-| **安全重启** | `virsh reboot ubuntu-01 --mode agent` | 强制通过内部 Agent 重启，避免某些内核卡死状态 |
-| **重置 root 密码** | `virsh set-user-password ubuntu-01 root 123456` | 紧急救援，无需进入单用户模式或挂载磁盘修改 |
-| **查看 OS 详情** | `virsh domhostname ubuntu-01` | 确认内部主机名是否与 Libvirt 记录一致 |
-| **获取磁盘占用** | `virsh domfsinfo ubuntu-01` | 从内部视角看磁盘挂载点和文件系统类型 |
-
-
-#### virt-manager
-
-**virt-manager** 是一个可视化虚拟机管理工具，它提供了一个用户友好的界面，用于创建、配置、管理和监控虚拟机。
-
-**安装 virt-manager**
-
-```bash
-# Ubuntu/Debian
-apt install virt-manager -y
-
-# CentOS/Rocky
-yum install virt-manager -y
-```
-
-**启动 virt-manager**
-- 需要开启 X11 转发，例如 xshell 中需要安装 Xmanager-passive 程序
-```bash
-# 假设宿主机 IP 为 10.0.0.1，X11 转发端口为 0.0
-export DISPLAY=10.0.0.1:0.0
-
-# 启动 virt-manager
-virt-manager
-```
-
-
-
-
----
-
-### SRE 部署建议
-
-为了让上述命令生效，你需要完成两步：
-
-1. **XML 配置（宿主机）**：确保虚拟机 XML 中包含 `qemu-ga` 的通道（通常 `virt-install` 会默认添加）：
-```xml
-<channel type='unix'>
-  <target type='virtio' name='org.qemu.guest_agent.0'/>
-</channel>
-
-```
-
-
-2. **安装服务（虚拟机内）**：
-```bash
-# Ubuntu/Debian
-apt install qemu-guest-agent -y && systemctl enable --now qemu-guest-agent
-
-# CentOS/Rocky
-yum install qemu-guest-agent -y && systemctl enable --now qemu-guest-agent
-
-```
 
 
 
@@ -461,30 +220,6 @@ virsh snapshot-revert ubuntu-01 snapshot-01
 virsh snapshot-delete ubuntu-01 snapshot-01
 ```
 
-## 七、虚拟机克隆
-在 KVM 环境中，克隆虚拟机主要有两种方式：使用命令行工具 **`virt-clone`**（最简单、最常用）以及**手动复制磁盘镜像**。
-
-### 1. 使用 virt-clone 克隆虚拟机
-这是官方推荐的方法，它会自动处理配置文件（XML）的修改，包括生成新的 UUID、MAC 地址等，避免冲突。
-
-```sh
-# 确定源虚拟机名称
-virsh list --all
-
-# 克隆前建议先停止（关机）源虚拟机，以确保磁盘数据的一致性。
-virsh shutdown <源虚拟机名称>
-
-# 执行克隆
-virt-clone \
-  --original <源虚拟机名称> \
-  --name <新虚拟机名称> \
-  --file <新虚拟机磁盘文件的存储路径>.qcow2
-
-
-# 启动新虚拟机
-virsh start <新虚拟机名称>
-```
-- `--clone-type=full`：创建一个完整的克隆，包括所有磁盘数据。
 
 ## 八、网络管理
 
@@ -642,3 +377,157 @@ virsh net-autostart --disable default
 virsh net-undefine default
 ```
 
+## 九、虚拟机管理脚本
+### 9.1 统计虚拟机
+
+```py {filename="collect_vm.py"}
+import subprocess
+import pandas as pd
+import datetime
+from openpyxl import load_workbook
+from openpyxl.styles import Font, PatternFill, Alignment
+
+# --- 配置区：对应你 ~/.ssh/config 里的别名 ---
+HOST_ALIASES = ["kvm1", "kvm2", "kvm3"]
+
+# 强化版 Shell 命令：增加了 virsh desc 读取逻辑，并修正了输出格式
+KVM_CMD = """
+virsh list --all --name | while read vm; do
+    [ -z "$vm" ] && continue
+    
+    # 清理函数：去除换行和首尾空格
+    clean() { echo "$1" | tr -d '\\n\\r' | xargs; }
+
+    status=$(clean "$(virsh domstate "$vm" 2>/dev/null)")
+    
+    create_time=$(clean "$(stat -c %y /etc/libvirt/qemu/"$vm".xml 2>/dev/null | cut -d'.' -f1)")
+    [ -z "$create_time" ] && create_time="Unknown"
+    
+    info=$(virsh dominfo "$vm" 2>/dev/null)
+    vcpu=$(clean "$(echo "$info" | grep "CPU(s):" | awk '{print $2}')")
+    mem=$(clean "$(echo "$info" | grep "Used memory:" | awk '{print $3/1024/1024 "G"}')")
+    
+    disks=$(clean "$(virsh domblklist "$vm" --details 2>/dev/null | grep 'disk' | awk '{print $4}' | paste -sd ";")")
+    [ -z "$disks" ] && disks="No_Disk_Found"
+
+    # --- 获取虚拟机备注 (使用 --config 确保即便没重启也能读到磁盘配置) ---
+    note=$(clean "$(virsh desc "$vm" --config 2>/dev/null)")
+    [ -z "$note" ] || [ "$note" = "没有域描述" ] && note="N/A"
+
+    # --- IP 获取逻辑 ---
+    get_ips_from_source() {
+        virsh domifaddr "$vm" --source $1 2>/dev/null | grep ipv4 | awk '{print $4}' | cut -d/ -f1 | xargs | sed 's/ /,/g'
+    }
+
+    ips=$(get_ips_from_source "agent")
+    if [ -z "$ips" ]; then
+        ips=$(get_ips_from_source "lease")
+    fi
+    
+    if [ -z "$ips" ]; then
+        macs=$(virsh domiflist "$vm" 2>/dev/null | grep -E "vnet|virtio" | awk '{print $5}')
+        temp_ips=""
+        for m in $macs; do
+            found_ip=$(arp -an | grep "$m" | awk '{print $2}' | tr -d '()')
+            if [ ! -z "$found_ip" ]; then
+                if [ -z "$temp_ips" ]; then temp_ips="$found_ip"; else temp_ips="$temp_ips,$found_ip"; fi
+            fi
+        done
+        ips="$temp_ips"
+    fi
+    
+    ips=$(echo "$ips" | tr -d '\\n\\r')
+    [ -z "$ips" ] && ips="Unknown"
+    
+    # 修正点：最后确保输出的是 ${note}，而不是空的 ${}
+    echo "${vm}|${status}|${create_time}|${vcpu}|${mem}|${ips}|${disks}|${note}"
+done
+"""
+
+def fetch_kvm_data():
+    all_data = []
+    for host in HOST_ALIASES:
+        print(f"🔍 正在连接宿主机: {host} ...")
+        ssh_cmd = ["ssh", "-o", "ConnectTimeout=5", host, KVM_CMD]
+        try:
+            process = subprocess.run(ssh_cmd, capture_output=True, text=True, check=True)
+            output = process.stdout.strip()
+            
+            if not output: continue
+            
+            for line in output.split('\n'):
+                line = line.strip()
+                if not line or '|' not in line: continue
+                
+                parts = line.split('|')
+                # 填充字段，确保有 8 个元素
+                while len(parts) < 8:
+                    parts.append("Unknown")
+                
+                all_data.append({
+                    "宿主机": host,
+                    "虚拟机名称": parts[0],
+                    "运行状态": parts[1],
+                    "创建时间": parts[2],
+                    "配置(vCPU)": parts[3],
+                    "配置(内存)": parts[4],
+                    "IP": parts[5],
+                    "磁盘路径": parts[6],
+                    "备注": parts[7]
+                })
+        except Exception as e:
+            print(f"❌ {host} 执行失败: {e}")
+            
+    return all_data
+
+def save_and_style_excel(data, filename):
+    df = pd.DataFrame(data)
+    # 重新排序列，确保备注在最后一列
+    cols = ["宿主机", "虚拟机名称", "运行状态", "创建时间", "配置(vCPU)", "配置(内存)", "IP", "磁盘路径",  "备注"]
+    df = df[cols]
+    df = df.sort_values(by=["宿主机", "虚拟机名称"])
+    df.to_excel(filename, index=False, engine='openpyxl')
+    
+    wb = load_workbook(filename)
+    ws = wb.active
+    
+    # 样式定义
+    header_fill = PatternFill(start_color="44546A", end_color="44546A", fill_type="solid")
+    header_font = Font(color="FFFFFF", bold=True, size=11)
+    center_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+    # 美化表头
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = center_alignment
+
+    # 自动调整列宽
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except: pass
+        
+        # 特别处理“备注”列 (K列)
+        if column_letter == 'K':
+            ws.column_dimensions[column_letter].width = 45
+        else:
+            adjusted_width = (max_length + 4)
+            ws.column_dimensions[column_letter].width = adjusted_width if adjusted_width < 60 else 60
+
+    wb.save(filename)
+    print(f"✨ 最终结果已保存: {filename}")
+
+if __name__ == "__main__":
+    results = fetch_kvm_data()
+    if results:
+        now_str = datetime.datetime.now().strftime('%Y%m%d_%H%M')
+        fname = f"KVM_INFO_{now_str}.xlsx"
+        save_and_style_excel(results, fname)
+    else:
+        print("📭 未采集到有效数据。")
+```
