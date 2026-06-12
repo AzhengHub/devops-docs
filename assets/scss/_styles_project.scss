@@ -181,6 +181,27 @@ https://www.docsy.dev/docs/content/lookandfeel/#project-style-files
   font-size: 1.3rem !important;
 }
 
+// Navbar search box: centered + border
+.td-navbar-container {
+  position: relative;
+}
+
+.td-navbar__search {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 320px;
+}
+
+.td-navbar .td-search__input {
+  border: 1px solid rgba(var(--bs-body-color-rgb, 0, 0, 0), 0.25) !important;
+  border-radius: 0.375rem;
+  &:focus {
+    border-color: var(--bs-primary) !important;
+    box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb), 0.2) !important;
+  }
+}
+
 // Collapse shortcode styles
 .collapse-details {
   margin: 1rem 0;

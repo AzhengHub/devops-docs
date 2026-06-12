@@ -179,7 +179,7 @@ params:
     # Enable foldable sidebar menu items (allows collapsing/expanding menu sections)
     sidebar_menu_foldable: true
     # Set to true to hide the sidebar search box (the top nav search box will still be displayed if search is enabled)
-    sidebar_search_disable: false
+    sidebar_search_disable: true
     # Enable light/dark mode toggle menu in the navbar
     showLightDarkModeMenu: true
 
