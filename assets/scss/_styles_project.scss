@@ -644,6 +644,11 @@ $navbar-real-height: 71px;
   }
 }
 
+// 侧边栏顶部"文档首页"根节点链接文字居中
+.td-sidebar-nav .td-sidebar-link.tree-root {
+  text-align: center;
+}
+
 // ============================================================
 // 首页模拟 Linux 终端（layouts/shortcodes/terminal.html 等）
 // ============================================================
