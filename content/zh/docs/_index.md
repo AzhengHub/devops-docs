@@ -2,6 +2,7 @@
 title: 文档首页
 layout: home-terminal
 no_list: true
+body_class: td-home-terminal
 ---
 
 {{< terminal title="azheng@devops: ~ — bash" >}}
