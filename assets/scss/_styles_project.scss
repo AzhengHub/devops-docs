@@ -643,3 +643,121 @@ $navbar-real-height: 71px;
     }
   }
 }
+
+// ============================================================
+// 首页模拟 Linux 终端（layouts/shortcodes/terminal.html 等）
+// ============================================================
+.term-window {
+  margin: 1.5rem 0 2.5rem;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #0d1117;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .35);
+  font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  .term-titlebar {
+    display: flex;
+    align-items: center;
+    padding: .6rem 1rem;
+    background: #161b22;
+    border-bottom: 1px solid #30363d;
+  }
+
+  .term-dots {
+    display: flex;
+    gap: 8px;
+
+    span {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    span:nth-child(1) { background: #ff5f57; }
+    span:nth-child(2) { background: #febc2e; }
+    span:nth-child(3) { background: #28c840; }
+  }
+
+  .term-title {
+    flex: 1;
+    text-align: center;
+    margin-right: 52px;   // 抵消左侧三个圆点宽度，让标题视觉居中
+    color: #8b949e;
+    font-size: .8rem;
+  }
+
+  .term-body {
+    padding: 1.25rem 1.5rem 1.4rem;
+    color: #c9d1d9;
+    font-size: .9rem;
+    line-height: 1.9;
+
+    p { margin: 0 0 .4rem; }
+
+    a {
+      color: #79c0ff;
+      text-decoration: none;
+      border-bottom: 1px dashed rgba(121, 192, 255, .45);
+
+      &:hover {
+        color: #a5d6ff;
+        border-bottom-style: solid;
+      }
+    }
+
+    strong { color: #ffa657; font-weight: 600; }
+    em     { color: #7ee787; font-style: normal; }
+
+    ul {
+      list-style: none;
+      margin: 0 0 1rem;
+      padding-left: .25rem;
+    }
+
+    li {
+      position: relative;
+      padding-left: 2.4rem;
+
+      &::before {
+        content: "├──";
+        position: absolute;
+        left: 0;
+        color: #484f58;
+      }
+      &:last-child::before { content: "└──"; }
+    }
+  }
+
+  .term-line {
+    margin: 1rem 0 .45rem;
+
+    &:first-child { margin-top: 0; }
+  }
+
+  .term-prompt {
+    margin-right: .55em;
+    user-select: none;
+
+    .term-user { color: #7ee787; font-weight: 600; }
+    .term-path { color: #79c0ff; font-weight: 600; }
+    .term-sep  { color: #8b949e; }
+  }
+
+  .term-cmd-text { color: #e6edf3; }
+
+  .term-endline { margin-bottom: 0; }
+}
+
+.term-cursor {
+  display: inline-block;
+  width: .55em;
+  height: 1.15em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: #58a6ff;
+  animation: term-blink 1.1s steps(2, start) infinite;
+}
+
+@keyframes term-blink {
+  50% { opacity: 0; }
+}

@@ -1,0 +1,101 @@
+{{- $title := .Get "title" | default "azheng@devops: ~" -}}
+<div class="term-window" data-term-animate>
+  <div class="term-titlebar">
+    <div class="term-dots"><span></span><span></span><span></span></div>
+    <div class="term-title">{{ $title }}</div>
+  </div>
+  <div class="term-body">
+    {{ .Inner | safeHTML }}
+    <div class="term-line term-cmd term-endline">
+      <span class="term-prompt"><span class="term-user">azheng@devops</span><span class="term-sep">:</span><span class="term-path">~</span><span class="term-sep">$</span></span>
+      <span class="term-cursor"></span>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var win = document.querySelector('.term-window[data-term-animate]:not([data-term-done])');
+  if (!win) return;
+  win.dataset.termDone = '1';
+  var body = win.querySelector('.term-body');
+
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var played = false;
+  try { played = sessionStorage.getItem('azheng-term-typed') === '1'; } catch (e) {}
+  if (reduced || played) return; // 直接静态展示
+  try { sessionStorage.setItem('azheng-term-typed', '1'); } catch (e) {}
+
+  // 收集步骤：命令行逐字慢敲，输出块快速流出
+  var steps = [];
+  body.querySelectorAll(':scope > .term-line, :scope > .term-out').forEach(function (el) {
+    if (el.classList.contains('term-endline')) {
+      el.style.display = 'none';
+      steps.push({ type: 'end', el: el });
+      return;
+    }
+    if (el.classList.contains('term-cmd')) {
+      var t = el.querySelector('.term-cmd-text');
+      steps.push({ type: 'cmd', el: el, target: t, chars: Array.from(t.textContent) });
+      t.textContent = '';
+    } else {
+      var nodes = [];
+      var total = 0;
+      var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
+      var n;
+      while ((n = walker.nextNode())) {
+        if (!n.nodeValue) continue;
+        nodes.push({ node: n, chars: Array.from(n.nodeValue) });
+        total += n.nodeValue.length;
+        n.nodeValue = '';
+      }
+      steps.push({ type: 'out', el: el, nodes: nodes, total: total });
+    }
+    el.style.display = 'none';
+  });
+
+  var cursor = document.createElement('span');
+  cursor.className = 'term-cursor';
+
+  var i = 0;
+  function next() {
+    if (i >= steps.length) return;
+    var s = steps[i++];
+    s.el.style.display = '';
+    if (s.type === 'end') { cursor.remove(); return; }
+    if (s.type === 'cmd') typeCmd(s, next);
+    else streamOut(s, next);
+  }
+
+  function typeCmd(s, done) {
+    s.el.appendChild(cursor);
+    var k = 0;
+    (function tick() {
+      if (k < s.chars.length) {
+        s.target.textContent += s.chars[k++];
+        setTimeout(tick, 45 + Math.random() * 65);
+      } else {
+        setTimeout(done, 280);
+      }
+    })();
+  }
+
+  function streamOut(s, done) {
+    // 每帧吐出的字符数：保证再长的输出也能在 ~1.5s 内打完
+    var perTick = Math.max(2, Math.round(s.total / 90));
+    var ni = 0, ci = 0;
+    (function tick() {
+      var budget = perTick;
+      while (budget-- > 0 && ni < s.nodes.length) {
+        var rec = s.nodes[ni];
+        if (ci === 0) rec.node.parentNode.insertBefore(cursor, rec.node.nextSibling);
+        if (ci < rec.chars.length) rec.node.nodeValue += rec.chars[ci++];
+        if (ci >= rec.chars.length) { ni++; ci = 0; }
+      }
+      if (ni < s.nodes.length) requestAnimationFrame(tick);
+      else setTimeout(done, 320);
+    })();
+  }
+
+  setTimeout(next, 350);
+})();
+</script>
