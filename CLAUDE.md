@@ -5,6 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 协作规范
 
 - **不要主动提交代码**，必须等用户明确说"提交"才执行 `git commit`。
+- **每次修改完成后**，执行 `systemctl restart caddy-hugo.service` 重启服务，使改动生效到生产环境。
 
 ## 项目概述
 
