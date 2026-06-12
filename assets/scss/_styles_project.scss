@@ -170,6 +170,17 @@ https://www.docsy.dev/docs/content/lookandfeel/#project-style-files
   }
 }
 
+// Navbar logo size override (Docsy default is 30px)
+.td-navbar .navbar-brand svg {
+  height: 44px !important;
+  width: 44px !important;
+}
+
+// Navbar brand name font size
+.td-navbar .navbar-brand__name {
+  font-size: 1.3rem !important;
+}
+
 // Collapse shortcode styles
 .collapse-details {
   margin: 1rem 0;

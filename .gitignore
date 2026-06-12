@@ -9,3 +9,4 @@ Caddyfile
 
 /_vendor
 .vscode/
+/tmp
