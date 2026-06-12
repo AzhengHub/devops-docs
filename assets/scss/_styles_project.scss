@@ -492,6 +492,27 @@ $navbar-real-height: 71px;
   padding-right: 0.5rem;   // gap so the scrollbar doesn't clip text
 }
 
+// Left sidebar: same fix — Docsy assumes a 4rem navbar, so the nav scroll
+// container (and its scrollbar arrow) was tucked 7px under the real navbar.
+@media (min-width: 768px) {
+  .td-sidebar {
+    padding-top: $navbar-real-height;            // was 4rem
+  }
+  .td-sidebar__inner {
+    top: $navbar-real-height;                    // was 4rem
+    height: calc(100vh - #{$navbar-real-height} - 1rem);  // was 100vh - 5rem
+  }
+  .td-sidebar-nav {
+    // Docsy: 100vh - 8.5rem (= 4rem navbar + 4.5rem search area)
+    max-height: calc(100vh - #{$navbar-real-height} - 4.5rem);
+  }
+}
+@media (min-width: 992px) {
+  .td-sidebar-nav.td-sidebar-nav--search-disabled {
+    max-height: calc(100vh - #{$navbar-real-height});  // was 100vh - 4rem
+  }
+}
+
 // Title: flex row, icon + text — matches reference button layout
 .td-toc-title {
   border-bottom: none !important;
