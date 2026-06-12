@@ -1,0 +1,25 @@
+{{/*
+  Custom TOC partial — matches code.claude.com/docs structure exactly
+  Overrides: _vendor/github.com/google/docsy/layouts/_partials/toc.html
+*/ -}}
+
+<div class="td-toc" data-proofer-ignore>
+{{ if not .Params.notoc -}}
+  {{ $toc := .TableOfContents -}}
+  {{ if and $toc (ne $toc `<nav id="TableOfContents"></nav>`) -}}
+    <div class="td-toc-title">
+      {{/* SVG paths copied verbatim from code.claude.com/docs source */}}
+      <svg class="td-toc-icon" width="12" height="12" viewBox="0 0 16 16" fill="none"
+           stroke="currentColor" stroke-width="2"
+           xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+        <path d="M2.44434 12.6665H13.5554" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M2.44434 3.3335H13.5554" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M2.44434 8H7.33323"       stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="td-toc-title__text">{{ i18n "toc_on_this_page" }}</span>
+    </div>
+    {{ $toc | safeHTML }}
+  {{ end -}}
+{{ end -}}
+</div>
+{{/* */ -}}
