@@ -454,9 +454,16 @@ https://www.docsy.dev/docs/content/lookandfeel/#project-style-files
 // Outer sticky column: does NOT scroll itself; inner .td-toc handles scrolling.
 // The right padding shifts the whole TOC (scrollbar included) away from the
 // window edge, matching the reference layout's wide right gutter.
+// Actual navbar height: 44px logo + padding = 71px. Docsy assumes 4rem (64px),
+// which tucked the scrollbar's top 7px under the navbar.
+$navbar-real-height: 71px;
+
 .td-sidebar-toc {
   overflow: hidden !important;
   padding-right: 4rem !important;
+  padding-top: 0 !important;   // spacing moves inside .td-toc (see below)
+  top: $navbar-real-height;
+  height: calc(100vh - #{$navbar-real-height});
 }
 
 // Widen the TOC column (default col-xl-2 = 16.67%) so long headings stay on
@@ -476,9 +483,11 @@ https://www.docsy.dev/docs/content/lookandfeel/#project-style-files
 .td-toc {
   overflow-y: auto;
   overflow-x: hidden;   // narrower column must not grow a horizontal scrollbar
-  // height = sticky column (100vh-4rem) minus column padding-top (0.75rem)
-  // and .td-toc own margin-top (1rem from Docsy) → leave 1rem bottom cushion
-  max-height: calc(100vh - 4rem - 1.75rem);
+  // Top spacing lives INSIDE the scroll container (reference uses -mt-10 pt-10
+  // for the same effect) so the scrollbar track reaches the column's top edge.
+  margin-top: 0;
+  padding-top: 1.75rem;
+  max-height: calc(100vh - #{$navbar-real-height});   // full sticky column height
   padding-bottom: 1.5rem;
   padding-right: 0.5rem;   // gap so the scrollbar doesn't clip text
 }
