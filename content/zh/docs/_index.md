@@ -1,5 +1,7 @@
 ---
 title: 文档首页
+layout: home-terminal
+no_list: true
 ---
 
 {{< terminal title="azheng@devops: ~ — bash" >}}

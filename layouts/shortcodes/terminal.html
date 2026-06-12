@@ -20,10 +20,7 @@
   var body = win.querySelector('.term-body');
 
   var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var played = false;
-  try { played = sessionStorage.getItem('azheng-term-typed') === '1'; } catch (e) {}
-  if (reduced || played) return; // 直接静态展示
-  try { sessionStorage.setItem('azheng-term-typed', '1'); } catch (e) {}
+  if (reduced) return; // 系统开启"减少动态效果"时直接静态展示
 
   // 收集步骤：命令行逐字慢敲，输出块快速流出
   var steps = [];
