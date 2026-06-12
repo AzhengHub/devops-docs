@@ -93,3 +93,5 @@ other = "没帮助"
 # Table of contents
 [toc_on_this_page]
 other = "本页目录"
+[toc_back_to_top]
+other = "回到顶部"

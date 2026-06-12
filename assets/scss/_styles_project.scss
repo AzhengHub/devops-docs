@@ -513,7 +513,7 @@ $navbar-real-height: 71px;
   }
 }
 
-// Title: flex row, icon + text — matches reference button layout
+// Title: a back-to-top link — bold text, icon + text row, highlight on hover
 .td-toc-title {
   border-bottom: none !important;
   padding-bottom: 0.5rem;
@@ -521,18 +521,29 @@ $navbar-real-height: 71px;
   display: flex;
   align-items: center;
   gap: 0.5rem;               // space-x-2 = 8px
+  text-decoration: none !important;
+  cursor: pointer;
 
   .td-toc-icon {
     flex-shrink: 0;
     color: #374151;          // text-gray-700 (light)
+    transition: color 0.15s ease;
   }
 
   &__text {
     font-size: 0.875rem;     // text-sm = 14px
-    font-weight: 500;        // font-medium
+    font-weight: 700;        // bold
     letter-spacing: 0;
     text-transform: none;
     color: #374151;          // text-gray-700 (light)
+    transition: color 0.15s ease;
+  }
+
+  &:hover {
+    .td-toc-icon,
+    .td-toc-title__text {
+      color: #111827;        // light mode hover: near-black
+    }
   }
 
   &__link {
@@ -604,6 +615,13 @@ $navbar-real-height: 71px;
     .td-toc-icon,
     &__text {
       color: #d1d5db;            // dark:text-gray-300
+    }
+
+    &:hover {
+      .td-toc-icon,
+      .td-toc-title__text {
+        color: #ffffff;          // dark mode hover: white highlight
+      }
     }
   }
 
