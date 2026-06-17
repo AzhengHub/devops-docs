@@ -373,6 +373,24 @@ https://www.docsy.dev/docs/content/lookandfeel/#project-style-files
   visibility: hidden !important;
 }
 
+// Push footer to bottom of viewport when content is short
+.td-outer {
+  .td-main {
+    flex: 1;
+  }
+}
+
+// Compact footer: single line, minimal height
+.td-footer {
+  min-height: 0 !important;
+  padding: 0.4rem 0 !important;
+  text-align: center;
+
+  .td-footer__all_rights_reserved {
+    display: none;
+  }
+}
+
 // Hide parent containers of taxonomy elements
 .td-sidebar section:has(.badge[href*="/tags/"]),
 .td-sidebar section:has(.badge[href*="/categories/"]) {
