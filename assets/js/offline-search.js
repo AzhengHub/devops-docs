@@ -27,38 +27,48 @@
 
     let idx = null;
     const resultDetails = new Map();
+    let indexLoaded = false;
+    let indexLoading = false;
 
-    $.ajax($searchInput.data('offline-search-index-json-src')).then((data) => {
-      idx = lunr(function () {
-        this.pipeline.remove(lunr.trimmer);
-        this.searchPipeline.remove(lunr.trimmer);
+    const loadIndex = () => {
+      if (indexLoaded || indexLoading) return;
+      indexLoading = true;
+      $.ajax($searchInput.data('offline-search-index-json-src')).then((data) => {
+        idx = lunr(function () {
+          this.pipeline.remove(lunr.trimmer);
+          this.searchPipeline.remove(lunr.trimmer);
 
-        this.ref('ref');
-        this.field('title', { boost: 5 });
-        this.field('categories', { boost: 3 });
-        this.field('tags', { boost: 3 });
-        this.field('description', { boost: 2 });
-        this.field('body');
+          this.ref('ref');
+          this.field('title', { boost: 5 });
+          this.field('categories', { boost: 3 });
+          this.field('tags', { boost: 3 });
+          this.field('description', { boost: 2 });
+          this.field('body');
 
-        data.forEach((doc) => {
-          this.add({
-            ref:         doc.ref,
-            title:       cjkBigrams(doc.title),
-            categories:  cjkBigrams(doc.categories),
-            tags:        cjkBigrams(doc.tags),
-            description: cjkBigrams(doc.description),
-            body:        cjkBigrams(doc.body),
-          });
+          data.forEach((doc) => {
+            this.add({
+              ref:         doc.ref,
+              title:       cjkBigrams(doc.title),
+              categories:  cjkBigrams(doc.categories),
+              tags:        cjkBigrams(doc.tags),
+              description: cjkBigrams(doc.description),
+              body:        cjkBigrams(doc.body),
+            });
 
-          resultDetails.set(doc.ref, {
-            title:  doc.title,
-            excerpt: doc.excerpt,
+            resultDetails.set(doc.ref, {
+              title:   doc.title,
+              excerpt: doc.excerpt,
+            });
           });
         });
+        indexLoaded = true;
+        indexLoading = false;
+        $searchInput.trigger('change');
       });
+    };
 
-      $searchInput.trigger('change');
-    });
+    // 只在用户聚焦搜索框时才加载索引
+    $searchInput.one('focus', loadIndex);
 
     const render = ($targetSearchInput) => {
       {

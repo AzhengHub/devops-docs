@@ -460,7 +460,7 @@ $navbar-real-height: 71px;
 
 .td-sidebar-toc {
   overflow: hidden !important;
-  padding-right: 4rem !important;
+  padding-right: 0 !important;
   padding-top: 0 !important;   // spacing moves inside .td-toc (see below)
   top: $navbar-real-height;
   height: calc(100vh - #{$navbar-real-height});
@@ -470,10 +470,7 @@ $navbar-real-height: 71px;
 // one line; take the extra width from the main content column (col-xl-8).
 @media (min-width: 1200px) {
   .td-main main[role="main"] {
-    width: 62.5%;            // was 66.67%
-  }
-  .td-sidebar-toc {
-    width: 20.8333%;         // was 16.67% — border-left moves ~4% further left
+    width: 66.67%;
   }
 }
 
@@ -482,14 +479,11 @@ $navbar-real-height: 71px;
 // native scrollbar (wide track + arrows on Windows Chrome), so we do too.
 .td-toc {
   overflow-y: auto;
-  overflow-x: hidden;   // narrower column must not grow a horizontal scrollbar
-  // Top spacing lives INSIDE the scroll container (reference uses -mt-10 pt-10
-  // for the same effect) so the scrollbar track reaches the column's top edge.
+  overflow-x: hidden;
   margin-top: 0;
   padding-top: 1.75rem;
-  max-height: calc(100vh - #{$navbar-real-height});   // full sticky column height
+  max-height: calc(100vh - #{$navbar-real-height});
   padding-bottom: 1.5rem;
-  padding-right: 0.5rem;   // gap so the scrollbar doesn't clip text
 }
 
 // Left sidebar: same fix — Docsy assumes a 4rem navbar, so the nav scroll
@@ -647,6 +641,11 @@ $navbar-real-height: 71px;
 // 侧边栏顶部"文档首页"根节点链接文字居中
 .td-sidebar-nav .td-sidebar-link.tree-root {
   text-align: center;
+}
+
+// 正文内容左侧留白，避免紧贴侧边栏
+.td-content {
+  padding-left: 2rem;
 }
 
 // ============================================================

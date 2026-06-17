@@ -1,5 +1,6 @@
 {{- $.Scratch.Add "offline-search-index" slice -}}
 {{- range where .Site.AllPages ".Params.exclude_search" "!=" true -}}
+{{- $plain := .Plain | htmlUnescape -}}
 {{- $.Scratch.Add
     "offline-search-index"
     (dict
@@ -8,8 +9,8 @@
         "categories" (.Params.categories | default "")
         "tags" (.Params.tags | default "")
         "description" (.Description | default "")
-        "body" (.Plain | htmlUnescape)
-        "excerpt" ((.Description | default .Plain) | htmlUnescape | truncate (.Site.Params.offlineSearchSummaryLength | default 70) | htmlUnescape)
+        "body" ($plain | truncate 3000 "")
+        "excerpt" (($plain) | truncate (.Site.Params.offlineSearchSummaryLength | default 70) | htmlUnescape)
     )
 -}}
 {{- end -}}
