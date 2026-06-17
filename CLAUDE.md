@@ -7,6 +7,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **不要主动提交代码**，必须等用户明确说"提交"才执行 `git commit`。
 - **每次修改完成后**，执行 `systemctl restart caddy-hugo.service` 重启服务，使改动生效到生产环境。
 
+## Markdown 注意事项
+
+- `**加重**` 的闭合 `**` 前不能紧跟全角标点（如 `）`、`，`），否则 CommonMark 不识别为加重符，导致原样输出 `**文字）**`。
+  - 正确写法：`**表**（Table）` 而非 `**表（Table）**`
+
 ## 项目概述
 
 "阿征的运维笔记" —— 基于 Hugo + Docsy 主题构建的中文运维文档站点，内容涵盖 Kubernetes、Linux、KVM 虚拟化、AWS、CI/CD、数据库、容器等运维方向。
