@@ -188,37 +188,7 @@ virsh list --all
 
 
 
-## 六、快照管理
-{{% alert title="<i class='fa-solid fa-exclamation-triangle pe-1'></i> 注意事项" color=warning %}}
-* **磁盘格式要求：** 快照功能主要针对 **qcow2** 格式。如果磁盘是 **raw** 格式，则无法使用内置快照（需先转换为 qcow2）。
-* **写时复制 (COW)：** KVM 快照基于 COW 技术。创建快照是瞬间的，但随着数据写入，快照文件会逐渐增大。
-{{% /alert %}}
 
-### 1. 创建快照
-```bash
-# virsh snapshot-create-as 虚拟机名称 快照名称 --atomic
-virsh snapshot-create-as ubuntu-01 snapshot-01 --atomic
-```
-- `--atomic`：确保快照创建是原子操作，要么成功要么失败，不会部分完成。
-
-
-### 2. 查看快照
-```bash
-# virsh snapshot-list 虚拟机名称
-virsh snapshot-list ubuntu-01
-```
-
-### 3. 恢复快照
-```bash
-# virsh snapshot-revert 虚拟机名称 快照名称
-virsh snapshot-revert ubuntu-01 snapshot-01
-```
-
-### 4. 删除快照
-```bash
-# virsh snapshot-delete 虚拟机名称 快照名称
-virsh snapshot-delete ubuntu-01 snapshot-01
-```
 
 
 ## 八、网络管理
