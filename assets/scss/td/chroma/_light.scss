@@ -1,0 +1,124 @@
+// =============================================================================
+// Chroma syntax highlighting — VSCode "Light+" (默认浅色主题)
+//
+// 覆盖 Docsy 自带的 td/chroma/_light.scss（原为 tango）。
+//
+// 取色来自 VSCode 内置 light_vs.json + light_plus.json：
+//   editor.background            #FFFFFF
+//   editor.foreground            #000000
+//   comment                      #008000
+//   string                       #A31515
+//   string.regexp                #811F3F
+//   constant.numeric             #098658
+//   keyword / storage            #0000FF
+//   keyword.control              #AF00DB
+//   variable                     #001080
+//   variable.other.constant      #0070C1
+//   entity.name.function         #795E26
+//   entity.name.type / class     #267F99
+//   entity.name.tag              #800000
+//   entity.other.attribute-name  #E50000
+//   constant.character.escape    #EE0000
+//   invalid                      #CD3131
+//
+// 本文件被 td/_code-dark.scss 以 @import 引入到 [data-bs-theme='light'] 作用域内，
+// 因此这里只写裸规则，不要再自行嵌套主题选择器。
+// =============================================================================
+
+/* Background */ .bg { color:#000000;background-color:#ffffff; }
+/* PreWrapper */ .chroma { color:#000000;background-color:#ffffff; }
+/* Other */ .chroma .x { color:#000000 }
+/* Error */
+// 同 _dark.scss：err 是词法兜底而非真错误（中文全角标点会命中），取 editor.foreground。
+// 注意原 tango 主题此处为红字 + 粉底，改为中性色是有意为之。
+.chroma .err { color:#000000 }
+/* LineLink */ .chroma .lnlinks { outline:none;text-decoration:none;color:inherit }
+/* LineTableTD */ .chroma .lntd { vertical-align:top;padding:0;margin:0;border:0; }
+/* LineTable */ .chroma .lntable { border-spacing:0;padding:0;margin:0;border:0; }
+/* LineHighlight */ .chroma .hl { background-color:#f0f0f0 }
+/* LineNumbersTable */ .chroma .lnt { white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#237893 }
+/* LineNumbers */ .chroma .ln { white-space:pre;-webkit-user-select:none;user-select:none;margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#237893 }
+/* Line */ .chroma .line { display:flex; }
+
+/* Keyword */ .chroma .k { color:#0000ff }
+/* KeywordConstant */ .chroma .kc { color:#0000ff }
+/* KeywordDeclaration */ .chroma .kd { color:#0000ff }
+/* KeywordNamespace */ .chroma .kn { color:#af00db }
+/* KeywordPseudo */ .chroma .kp { color:#0000ff }
+/* KeywordReserved */ .chroma .kr { color:#0000ff }
+/* KeywordType */ .chroma .kt { color:#267f99 }
+
+/* Name */ .chroma .n { color:#000000 }
+/* NameAttribute */ .chroma .na { color:#e50000 }
+/* NameBuiltin */ .chroma .nb { color:#795e26 }
+/* NameBuiltinPseudo */ .chroma .bp { color:#0000ff }
+/* NameClass */ .chroma .nc { color:#267f99 }
+/* NameConstant */ .chroma .no { color:#0070c1 }
+/* NameDecorator */ .chroma .nd { color:#795e26 }
+/* NameEntity */ .chroma .ni { color:#ee0000 }
+/* NameException */ .chroma .ne { color:#267f99 }
+/* NameFunction */ .chroma .nf { color:#795e26 }
+/* NameFunctionMagic */ .chroma .fm { color:#795e26 }
+/* NameLabel */ .chroma .nl { color:#000000 }
+/* NameNamespace */ .chroma .nn { color:#267f99 }
+/* NameOther */ .chroma .nx { color:#000000 }
+/* NameProperty */ .chroma .py { color:#001080 }
+/* NameTag */ .chroma .nt { color:#800000 }
+/* NameVariable */ .chroma .nv { color:#001080 }
+/* NameVariableClass */ .chroma .vc { color:#001080 }
+/* NameVariableGlobal */ .chroma .vg { color:#001080 }
+/* NameVariableInstance */ .chroma .vi { color:#001080 }
+/* NameVariableMagic */ .chroma .vm { color:#001080 }
+
+/* Literal */ .chroma .l { color:#000000 }
+/* LiteralDate */ .chroma .ld { color:#a31515 }
+
+/* LiteralString */ .chroma .s { color:#a31515 }
+/* LiteralStringAffix */ .chroma .sa { color:#0000ff }
+/* LiteralStringBacktick */ .chroma .sb { color:#a31515 }
+/* LiteralStringChar */ .chroma .sc { color:#a31515 }
+/* LiteralStringDelimiter */ .chroma .dl { color:#a31515 }
+/* LiteralStringDoc */ .chroma .sd { color:#a31515 }
+/* LiteralStringDouble */ .chroma .s2 { color:#a31515 }
+/* LiteralStringEscape */ .chroma .se { color:#ee0000 }
+/* LiteralStringHeredoc */ .chroma .sh { color:#a31515 }
+/* LiteralStringInterpol */ .chroma .si { color:#0000ff }
+/* LiteralStringOther */ .chroma .sx { color:#a31515 }
+/* LiteralStringRegex */ .chroma .sr { color:#811f3f }
+/* LiteralStringSingle */ .chroma .s1 { color:#a31515 }
+/* LiteralStringSymbol */ .chroma .ss { color:#a31515 }
+
+/* LiteralNumber */ .chroma .m { color:#098658 }
+/* LiteralNumberBin */ .chroma .mb { color:#098658 }
+/* LiteralNumberFloat */ .chroma .mf { color:#098658 }
+/* LiteralNumberHex */ .chroma .mh { color:#098658 }
+/* LiteralNumberInteger */ .chroma .mi { color:#098658 }
+/* LiteralNumberIntegerLong */ .chroma .il { color:#098658 }
+/* LiteralNumberOct */ .chroma .mo { color:#098658 }
+
+/* Operator */ .chroma .o { color:#000000 }
+/* OperatorWord */ .chroma .ow { color:#0000ff }
+/* Punctuation */ .chroma .p { color:#000000 }
+
+/* Comment */ .chroma .c { color:#008000 }
+/* CommentHashbang */ .chroma .ch { color:#008000 }
+/* CommentMultiline */ .chroma .cm { color:#008000 }
+/* CommentSingle */ .chroma .c1 { color:#008000 }
+/* CommentSpecial */ .chroma .cs { color:#008000 }
+/* CommentPreproc */ .chroma .cp { color:#af00db }
+/* CommentPreprocFile */ .chroma .cpf { color:#a31515 }
+
+/* Generic */ .chroma .g { color:#000000 }
+/* GenericDeleted */ .chroma .gd { color:#a31515 }
+/* GenericEmph */ .chroma .ge { font-style:italic }
+/* GenericError */ .chroma .gr { color:#cd3131 }
+/* GenericHeading */ .chroma .gh { color:#0000ff;font-weight:bold }
+/* GenericInserted */ .chroma .gi { color:#098658 }
+/* GenericOutput */ .chroma .go { color:#000000 }
+/* GenericPrompt */ .chroma .gp { color:#0000ff }
+/* GenericStrong */ .chroma .gs { font-weight:bold }
+/* GenericSubheading */ .chroma .gu { color:#0000ff;font-weight:bold }
+/* GenericTraceback */ .chroma .gt { color:#cd3131 }
+/* GenericUnderline */ .chroma .gl { text-decoration:underline }
+
+/* TextWhitespace */ .chroma .w { color:#d3d3d3 }

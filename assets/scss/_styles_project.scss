@@ -65,7 +65,8 @@ https://www.docsy.dev/docs/content/lookandfeel/#project-style-files
 
   // --- Code ---
   --bs-code-color:               #e8e8e3;
-  --td-pre-bg:                   #0b0c0e;
+  // 代码块背景对齐 VSCode Dark+ editor.background
+  --td-pre-bg:                   #1e1e1e;
 
   // --- Form controls ---
   --bs-form-control-bg:          #191a1b;
@@ -110,10 +111,17 @@ https://www.docsy.dev/docs/content/lookandfeel/#project-style-files
     border-color: #252627;
   }
 
-  // --- Code blocks: darkest surface ---
+  // --- Code blocks: VSCode Dark+ editor surface ---
+  // 走 var(--td-pre-bg)，与 td/chroma/_dark.scss 的 .chroma 背景保持同一来源
   pre, .highlight, .chroma {
-    background-color: #0b0c0e !important;
+    background-color: var(--td-pre-bg) !important;
     border: 1px solid #252627;
+  }
+
+  // 缩进式代码块（4 空格）不经过 codeblock 渲染钩子，拿不到 .chroma，
+  // 需单独对齐 VSCode editor.foreground。chroma 的 token 类特异性更高，不受影响。
+  pre code {
+    color: #d4d4d4;
   }
 
   // --- Inline code ---
@@ -199,6 +207,24 @@ https://www.docsy.dev/docs/content/lookandfeel/#project-style-files
   &:focus {
     border-color: var(--bs-primary) !important;
     box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb), 0.2) !important;
+  }
+}
+
+// =============================================================================
+// Light mode: 代码块对齐 VSCode Light+ editor.background (#ffffff)
+// 纯白代码块落在白色页面上没有边界，故补一条浅灰边框区分。
+// =============================================================================
+[data-bs-theme="light"] {
+  --td-pre-bg: #ffffff;
+
+  pre, .highlight, .chroma {
+    background-color: var(--td-pre-bg) !important;
+    border: 1px solid #e5e5e5;
+  }
+
+  // 同上：缩进式代码块对齐 VSCode Light+ editor.foreground
+  pre code {
+    color: #000000;
   }
 }
 
