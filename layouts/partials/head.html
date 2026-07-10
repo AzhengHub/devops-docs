@@ -65,15 +65,29 @@
 {{ partial "schema.html" . -}}
 {{ partial "twitter_cards.html" . -}}
 {{ partialCached "head-css.html" . "head-css-cache-key" -}}
-<script
-  src="https://code.jquery.com/jquery-3.7.1.min.js"
-  integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=="
-  crossorigin="anonymous"></script>
+
+{{/*
+  jQuery / lunr 自托管（原为 code.jquery.com 与 unpkg.com）。
+  理由：jQuery 无 defer，阻塞首屏；公共 CDN 从国内访问不稳定，一旦挂起
+  整站 JS（导航、侧边栏、tabbed-pane、搜索）全部失效。且浏览器自 2020 年起
+  按顶级站点分区缓存，跨站复用 CDN 缓存的红利已不存在。
+
+  文件在 assets/js/vendor/，下载时已用 Docsy 声明的 SRI 校验过。
+  fingerprint 会生成内容哈希文件名并自动计算 integrity；同源无需 crossorigin。
+
+  注意：jQuery 必须保持非 defer 且先于 scripts.html 中的 main.js 执行 ——
+  main.js 是无 defer 的普通 script，加 defer 会导致 $ 未定义。
+*/ -}}
+{{ with resources.Get "js/vendor/jquery-3.7.1.min.js" -}}
+{{ $jq := . | fingerprint -}}
+<script src="{{ $jq.RelPermalink }}" integrity="{{ $jq.Data.Integrity }}"></script>
+{{ end -}}
+
 {{ if .Site.Params.offlineSearch -}}
-<script defer
-  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
-  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
-  crossorigin="anonymous"></script>
+{{ with resources.Get "js/vendor/lunr.min.js" -}}
+{{ $lunr := . | fingerprint -}}
+<script defer src="{{ $lunr.RelPermalink }}" integrity="{{ $lunr.Data.Integrity }}"></script>
+{{ end -}}
 {{ end -}}
 
 {{ if .Site.Params.prism_syntax_highlighting -}}
