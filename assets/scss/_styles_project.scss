@@ -693,6 +693,75 @@ $navbar-real-height: 71px;
 }
 
 // ============================================================
+// Steps 步骤条 shortcode（layouts/shortcodes/steps.html + step.html）
+// 圆圈数字 + 垂直虚线，仿 Gemini 步骤列表样式
+// ============================================================
+.steps {
+  counter-reset: steps-counter;
+  margin: 1.5rem 0;
+}
+
+.steps-step {
+  position: relative;
+  padding-left: 3.25rem;
+  padding-bottom: 1.75rem;
+
+  // 圆圈数字
+  &::before {
+    counter-increment: steps-counter;
+    content: counter(steps-counter);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid var(--bs-secondary-color, #6c757d);
+    border-radius: 50%;
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--bs-body-color, #212529);
+  }
+
+  // 垂直虚线（最后一步不画）
+  &:not(:last-of-type)::after {
+    content: "";
+    position: absolute;
+    left: calc(1rem - 1px);
+    top: 2.5rem;
+    bottom: 0.5rem;
+    border-left: 2px dotted var(--bs-secondary-color, #adb5bd);
+  }
+
+  &:last-of-type {
+    padding-bottom: 0;
+  }
+
+  .steps-step__title {
+    font-weight: 700;
+    font-size: 1.05rem;
+    line-height: 2rem;   // 与圆圈垂直居中对齐
+    color: var(--bs-heading-color, var(--bs-body-color));
+  }
+
+  .steps-step__subtitle {
+    font-style: italic;
+    font-size: 0.875rem;
+    color: var(--bs-secondary-color, #6c757d);
+    margin: 0.15rem 0 0.6rem;
+  }
+
+  .steps-step__content {
+    > p:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
+
+// ============================================================
 // 首页模拟 Linux 终端（layouts/shortcodes/terminal.html 等）
 // ============================================================
 .term-window {

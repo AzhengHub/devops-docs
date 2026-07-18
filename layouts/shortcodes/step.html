@@ -1,0 +1,11 @@
+{{- $title := .Get "title" -}}
+{{- $subtitle := .Get "subtitle" -}}
+<div class="steps-step">
+  <div class="steps-step__title">{{ $title | markdownify }}</div>
+  {{- with $subtitle }}
+  <div class="steps-step__subtitle">{{ . | markdownify }}</div>
+  {{- end }}
+  <div class="steps-step__content">
+    {{ .Inner | markdownify }}
+  </div>
+</div>

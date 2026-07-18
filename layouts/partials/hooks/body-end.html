@@ -1,0 +1,5 @@
+{{- /* Docsy body-end 钩子：由主题 _partials/scripts.html 在 </body> 前引入 */ -}}
+
+{{- /* 自动把 AI 导出的"1. **标题:** 副标题"式列表渲染为步骤条（样式见 _styles_project.scss 的 .steps） */ -}}
+{{- $autoStepsJs := resources.Get "js/auto-steps.js" | minify | fingerprint -}}
+<script src="{{ $autoStepsJs.RelPermalink }}" integrity="{{ $autoStepsJs.Data.Integrity }}" defer></script>
