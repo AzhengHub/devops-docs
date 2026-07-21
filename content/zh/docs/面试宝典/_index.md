@@ -10,7 +10,7 @@ SRE 是 Google 提出来的概念，它的全称是站点可靠性工程（Site 
 2. 通过一些辅助手段，例如状态检测脚本，定期检测后端服务可用性，当出现宕机时将流量转移并尝试对其重启恢复。还可以通过 keepalived + VIP 的方式为服务提供统一的访问入口，防止单点失败的情况发生。
 {{< /collapse >}}
 
-{{< collapse summary="**谈谈你对 Devops 的理解**" >}}
+{{< collapse summary="***谈谈你对 Devops 的理解**" >}}
 - xxx
 {{< /collapse >}}
 
@@ -908,6 +908,7 @@ GitLab → Webhook → Jenkins Job → Git clone → 找到 Jenkinsfile → 执�
 {{< /collapse >}}
 
 ## 容器
+### docker
 {{< collapse summary="***容器与虚拟机的区别？**" >}}
 - 容器使用宿主机的内核，而每个虚拟机都有自己独立的内核。
 - 容器更加轻量，迁移和部署都比虚拟机更加方便，并且启动速度也要比虚拟机快。
@@ -972,6 +973,10 @@ Docker 在 bridge 网络模式下，默认会创建一个 docker0 的网桥，�
 {{< /collapse >}}
 
 **实践场景：**
+{{< collapse summary="***容器化改造的过程？**" >}}
+- xxx
+{{< /collapse >}}
+
 {{< collapse summary="**如何定位容器的异常网络流量？如何对其进行封禁？**" >}}
 1. 首先通过看日志等方式，定位到对方的源IP地址；
 2. 进行抓包，但抓包方式取决于容器的运行方式；
@@ -990,7 +995,17 @@ Docker 在 bridge 网络模式下，默认会创建一个 docker0 的网桥，�
 - 使用多阶段构建，比如第一阶段使用nodejs镜像构建前端代码，第二阶段仅把前端构建结果拷贝至nginx镜像。
 {{< /collapse >}}
 
-## K8s
+### K8s
+{{< collapse summary="***Service 的类型有哪些？**" >}}
+- ClusterIP（默认）：提供一个仅在集群内部可访问的虚拟 IP。
+- NodePort：在每个节点上打开一个端口，通过 NodeIP:NodePort 的方式访问服务。
+    - 在生成 NodePort 的同时，也会生成一个 ClusterIP。可以通过 NodeIP:NodePort 从外部访问服务；但在集群内部，依然可以通过 ClusterIP 来访问。
+- LoadBalancer：在公有云（如 AWS、GCP、Azure）中使用时，会自动创建一个云负载均衡器，将外部流量转发到 Service。常用于生产环境对外暴露服务。
+    - 会生成一个 ClusterIP + NodePort，然后再由云提供商创建一个外部的负载均衡器，转发流量到 NodePort。
+    - 请求流程：外部 → LoadBalancer 公网 IP → NodePort → ClusterIP → Pod。
+- ExternalName：把集群外部服务引入到集群内。
+{{< /collapse >}}
+
 {{< collapse summary="***Kubernetes 的核心组件有哪些？**" >}}
 **Master 节点**
 - API Server：提供 Kubernetes API，是集群的前端接口。
@@ -1056,17 +1071,9 @@ Docker 在 bridge 网络模式下，默认会创建一个 docker0 的网桥，�
     - Unknown：Kubelet 无法获取 Pod 的状态。
     - CrashLoopBackOff（容器状态）：表示容器启动失败并多次重启失败。
 2. `kubectl describe pod <pod-name> -n <namespace>` 查看 Pod 的详细信息，包括事件（Events）、容器状态（Container Statuses）、挂载的卷（Mounts）等。
-    - xxx
-    - xxx
 3. `kubectl logs <pod-name> -n <namespace>` 查看 Pod 的日志，检查是否有异常输出。
-    - xxx
-    - xxx
 4. `kubectl exec -it <pod-name> -n <namespace> -- /bin/bash` 进入 Pod 内的 Shell 环境，检查容器是否正常运行。
-    - xxx
-    - xxx
 5. `kubectl get events -n <namespace>` 查看 Pod 的事件记录，检查是否有异常事件。
-    - xxx
-    - xxx
 
 {{< /collapse >}}
 
@@ -1189,15 +1196,6 @@ kubectl top pod --sort-by=memory
 - Service 的代理是基于 iptables 或 ipvs 的。
 {{< /collapse >}}
 
-{{< collapse summary="**Service 的类型有哪些？**" >}}
-- ClusterIP（默认）：提供一个仅在集群内部可访问的虚拟 IP。
-- NodePort：在每个节点上打开一个端口，通过 NodeIP:NodePort 的方式访问服务。
-    - 在生成 NodePort 的同时，也会生成一个 ClusterIP。可以通过 NodeIP:NodePort 从外部访问服务；但在集群内部，依然可以通过 ClusterIP 来访问。
-- LoadBalancer：在公有云（如 AWS、GCP、Azure）中使用时，会自动创建一个云负载均衡器，将外部流量转发到 Service。常用于生产环境对外暴露服务。
-    - 会生成一个 ClusterIP + NodePort，然后再由云提供商创建一个外部的负载均衡器，转发流量到 NodePort。
-    - 请求流程：外部 → LoadBalancer 公网 IP → NodePort → ClusterIP → Pod。
-- ExternalName：把集群外部服务引入到集群内。
-{{< /collapse >}}
 
 {{< collapse summary="**什么是 Headless Service？它与普通 Service 有什么区别？**" >}}
 - Headless Service 是一种特殊的 Service 类型，它与普通的 Service 主要区别在于不分配 Cluster IP。
@@ -1319,7 +1317,34 @@ kubectl top pod --sort-by=memory
 - xxx
 {{< /collapse >}}
 
-## 关系型数据库
+
+
+## 中间件
+### Kafka
+{{< collapse summary="***Kafka的核心组件有哪些？**" >}}
+Kafka自身：
+- Broker：Kafka 集群中的每个节点称为 Broker，负责接收、存储和传输消息。
+- Topic：Kafka 中消息的逻辑分类单元。
+- Partition：Topic 的物理分片，可以提高并行处理和扩展性。
+- Replica：Partition 的备份副本，生产环境一般最少为3个（1 个 Leader 加上 2 个 Follower）。
+- Zookeeper / KRaft：早期版本用于管理集群元数据，Kafka 2.8+ 开始，使用 KRaft（Kafka Raft Metadata mode） 模式，作为 Zookeeper 的替代方案。
+
+客户端：
+- Producer（生产者）：负责将数据发布（写入）到 Kafka 的 Topic 中。
+- Consumer（消费者）：订阅并消费 Kafka 中的消息。
+{{< /collapse >}}
+
+{{< collapse summary="***Kafka 的 Partition 一般配置几个？**" >}}
+- 底线：取决于消费者数量，一般是大于等于消费者数量，如果少的话，会有闲置的消费者。
+- 经验值：通常设为消费者数量的 2 到 3 倍。主要是为了防患于未然，以后业务量涨了，直接加机器就能干活，不用麻烦地去改 Partition 数量。
+- 上限：单台机器分担的 Partition 总数最好别超过 1000 到 2000 个（8U 32G 机器），设得太大容易把节点拖垮。
+{{< /collapse >}}
+
+### MongoDB
+- xxx
+
+
+### MySQL
 {{< collapse summary="***MySQL 如何实现主从复制？**" >}}
 1. 主库上创建创建复制账号；
 2. 主库（Master） 定义 server-id、开启 binlog（二进制日志）；
@@ -1429,7 +1454,7 @@ B+ 是一种多路平衡查找树，使用左前缀作为索引条件
 - 定期使用 EXPLAIN（MySQL）或 EXPLAIN ANALYZE（PostgreSQL）分析查询计划，确认索引是否被实际使用。
 {{< /collapse >}}
 
-## 非关系型数据库
+### Redis
 {{< collapse summary="***redis 持久化方式有哪些？**" >}}
 - RDB：基于内存的快照，有自动触发和手动触发两种方式：
     - 自动触发：定义配置文件（save 多少秒内 有多少key被修改）就触发。
@@ -1484,18 +1509,6 @@ save 60 10000 # 60 秒内至少有 10000 次写操作就触发快照
 {{< /collapse >}}
 
 
-## ELK / EFK
-
-
-## 消息队列
-{{< collapse summary="**Kafka的核心组件有哪些？**" >}}
-- Producer（生产者）：负责将数据发布（写入）到 Kafka 的 Topic 中。
-- Consumer（消费者）：订阅并消费 Kafka 中的消息。
-- Broker（代理）：Kafka 集群中的每个节点称为 Broker，负责接收、存储和传输消息。
-- Topic（主题）：Kafka 中消息的逻辑分类单元。
-- Partition（分区）：Topic 的物理分片，可以提高并行处理和扩展性。
-- Zookeeper（可选）：早期版本用于管理集群元数据，Kafka 2.8+ 开始，使用 KRaft（Kafka Raft Metadata mode） 模式，作为 Zookeeper 的替代方案。
-{{< /collapse >}}
 
 ## 负载均衡与高可用
 
@@ -1596,52 +1609,6 @@ save 60 10000 # 60 秒内至少有 10000 次写操作就触发快照
 {{< /collapse >}}
 
 
-
-## Python
-{{< collapse summary="**Python 的数据类型有哪些？**" >}}
-- 基本类型：int（整型）, float（浮点型）, complex（复数）, bool（布尔型）, 字符串；
-- 容器类型：list（列表）, tuple（元组）, set（集合）, dict（字典）。
-{{< /collapse >}}
-
-{{< collapse summary="**列表和元组的区别？**" >}}
-- 列表可变，元组不可变；
-- 定义方式上，列表使用方括号[]，元组使用圆括号()或直接用逗号分隔；
-{{< /collapse >}}
-
-{{< collapse summary="**Python 中 \*args 和 \*\*kwargs 的作用？**" >}}
-- *args：接收任意数量的位置参数，返回元组
-- **kwargs：接收任意数量的关键字参数，返回字典
-{{< /collapse >}}
-
-{{< collapse summary="**Python 中 is 与 == 的区别？**" >}}
-- `is`比较对象的id，即内存地址（是否是同一个对象），`==`比较对象的值
-``` python
-a = [1, 2]
-b = [1, 2]
-print(a == b)  # True
-print(a is b)  # False
-```
-{{< /collapse >}}
-
-{{< collapse summary="**Python的反射机制是什么？**" >}}
-是指 程序在运行时动态地获取对象的信息（如类型、属性、方法等），并能对其进行操作 的能力。
-
-反射常见应用场景：
-1. 根据配置文件动态加载类或模块
-2. 框架内部自动注册与加载类
-
-反射常见内建函数：
-1. getattr(obj, name)	获取对象的属性或方法
-2. hasattr(obj, name)	判断对象是否有某属性
-3. setattr(obj, name, value)	设置属性
-4. delattr(obj, name)	删除属性
-{{< /collapse >}}
-
-{{< collapse summary="**Python的装饰器有哪些类型？**" >}}
-- 大体分为函数装饰器、类装饰器，还可以细分为有参装饰器和无参装饰器；
-- 装饰器主要用于在不修改原函数或类定义的前提下，动态地添加功能。
-{{< /collapse >}}
-
 ## 自动化运维
 **实践场景：**
 {{< collapse summary="***ansible在一百台机器上创建一个目录怎么做？**" >}}
@@ -1655,13 +1622,16 @@ print(a is b)  # False
 - 每个 VPC 至少由三部分组成：私网网段、交换机和路由表。
 {{< /collapse >}}
 
+{{< collapse summary="***阿里云你用过哪些组件？**" >}}
+- xxx
+{{< /collapse >}}
+
 {{< collapse summary="***AWS你用过哪些组件？**" >}}
 - xxx
 {{< /collapse >}}
 
-## 算法
-{{< collapse summary="***写个简单排序算法（冒泡、快排）**" >}}
-xxx
+
+## 其他
+{{< collapse summary="***设备配置规划？**" >}}
+- 比如根据访问量定义CPU内存等硬件资源
 {{< /collapse >}}
-
-
