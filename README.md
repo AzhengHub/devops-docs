@@ -15,8 +15,11 @@
   After=network.target
   
   [Service]
-  WorkingDirectory=/root/devops-docsza 
+  WorkingDirectory=/root/devops-docs
   TimeoutStartSec=300
+  Environment="HOME=/root"
+  Environment="HUGO_CACHEDIR=/root/.cache/hugo_cache"
+  Environment="GOPROXY=https://goproxy.cn,direct"
   ExecStartPre=/usr/local/bin/hugo
   ExecStart=/usr/local/bin/caddy run --config /root/devops-docs/Caddyfile
   Restart=on-failure
