@@ -1,5 +1,6 @@
 ---
 title: "Kafka"
+weight: 10
 ---
 
 # kafka 概述
@@ -644,4 +645,3 @@ def list_topics():
 if __name__ == "__main__":
     list_topics()
 ```
-

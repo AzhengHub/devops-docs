@@ -50,11 +50,10 @@ body_class: td-home-terminal
 - [虚拟化](/docs/虚拟化/) — KVM 等虚拟化技术
 - [AWS](/docs/aws/) — 云平台相关实践
 
-**📨 消息与大数据**
+**📨 中间件与大数据**
 
-- [消息队列](/docs/消息队列/) — Kafka、RabbitMQ 等消息中间件
+- [中间件](/docs/中间件/) — Kafka、RabbitMQ、ZooKeeper 等分布式中间件
 - [大数据](/docs/大数据/) — Hive 等大数据技术
-- [注册中心](/docs/注册中心/) — ZooKeeper 等注册中心技术
 
 **💻 编程语言**
 

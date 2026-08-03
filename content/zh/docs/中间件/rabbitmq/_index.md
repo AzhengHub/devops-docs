@@ -1,5 +1,6 @@
 ---
 title: "RabbitMQ"
+weight: 20
 ---
 
 # RabbitMQ 简介
@@ -31,7 +32,7 @@ Erlang官网：https://www.erlang.org/
 
 # RabbitMQ 运行原理
 
-<img src="/docs/消息队列/rabbitmq/rabbit1.png" alt="rabbit1" style="zoom: 100%;" />
+<img src="/docs/中间件/rabbitmq/rabbit1.png" alt="rabbit1" style="zoom: 100%;" />
 
 **Publisher**
 
@@ -109,7 +110,7 @@ Erlang官网：https://www.erlang.org/
 
 # RabbitMQ 发布者/消费者
 
-<img src="/docs/消息队列/rabbitmq/rabbitmq2.png" alt="rabbitmq2" style="zoom:50%;" />
+<img src="/docs/中间件/rabbitmq/rabbitmq2.png" alt="rabbitmq2" style="zoom:50%;" />
 
 **说明：**
 
