@@ -40,8 +40,7 @@ body_class: td-home-terminal
 
 **🔐 安全与审计**
 
-- [VPN](/docs/vpn/) — OpenVPN 等 VPN 技术
-- [堡垒机](/docs/堡垒机/) — JumpServer 等堡垒机技术
+- [安全与访问控制](/docs/安全与访问控制/) — VPN 安全接入、堡垒机权限控制与操作审计
 
 **🖥️ 基础设施**
 

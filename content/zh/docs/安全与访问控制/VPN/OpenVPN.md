@@ -1,5 +1,6 @@
 ---
 title: "OpenVPN"
+weight: 10
 ---
 
 ## Open VPN 概述
@@ -1039,8 +1040,7 @@ total 32
 
 - `route print` 输出：
 
-<!-- ![](/docs/vpn/客户端生成的路由信息.png) -->
-![](/docs/vpn/openvpn/客户端生成的路由信息.png)
+![](/docs/安全与访问控制/vpn/客户端生成的路由信息.png)
 
 - `netstat` 输出：
 

@@ -1,5 +1,6 @@
 ---
-title: "Jumpserver"
+title: "JumpServer"
+weight: 10
 ---
 
 ## JumpServer 概述
@@ -567,4 +568,3 @@ SMTP密码 #BKUGOQFTMOHQKRPC
 - 对应用进行授权，如 MySQL、Kubernetes
 - **需要创建一个 资产管理账号中 相应 应用的账号，然后在应用管理中创建指定的数据库 最后才能实现授权**
 - 授权时可以将指定的用户或用户组加入到应用中 从而实现从jumpserver上访问
-
