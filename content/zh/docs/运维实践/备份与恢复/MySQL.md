@@ -1,5 +1,6 @@
 ---
 title: "MySQL"
+weight: 10
 ---
 
 ## 一、前言
@@ -239,4 +240,3 @@ mysqlbinlog --start-position=120 /var/lib/mysql_old/mysql-bin.000015 /var/lib/my
 {{% alert title="<i class='fa-solid fa-info-circle pe-1'></i> 提示" color="info" %}}
 如果 MySQL 开启了 GTID，mysqlbinlog 命令可以不用指定 position，直接使用 --skip-gtids 或自动定位更加安全。
 {{% /alert %}}
-

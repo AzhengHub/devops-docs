@@ -57,6 +57,10 @@ body_class: td-home-terminal
 - [Python](/docs/python/) — Python 编程、Flask、FastAPI、SQLAlchemy 等
 - [编程语言](/docs/编程语言/) — Go、Java、C、SQL、前端开发等多语言技术
 
+**🛠️ 运维实践**
+
+- [运维实践](/docs/运维实践/) — 备份与恢复、故障处理、生产操作规范与运维经验
+
 **📖 面试与学习**
 
 - [面试宝典](/docs/面试宝典/) — 常见面试题汇总与解答

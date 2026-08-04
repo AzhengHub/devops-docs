@@ -1,5 +1,6 @@
 ---
 title: "Elasticsearch"
+weight: 40
 ---
 
 ## 一、前言

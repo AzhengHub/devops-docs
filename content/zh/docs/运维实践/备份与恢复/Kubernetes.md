@@ -1,5 +1,6 @@
 ---
 title: "Kubernetes"
+weight: 30
 ---
 
 ## 一、前言
