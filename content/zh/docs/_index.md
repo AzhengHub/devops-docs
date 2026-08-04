@@ -29,9 +29,8 @@ body_class: td-home-terminal
 
 **🌐 网络与服务**
 
-- [HTTP](/docs/http/) — Nginx、Apache、Tomcat、CA 证书管理等 Web 技术
 - [负载均衡与高可用](/docs/负载均衡与高可用/) — HAProxy、Keepalived、LVS 等负载均衡技术
-- [基础服务](/docs/基础服务/) — DNS、DHCP、FTP、SAMBA、NTP、Nexus、SSH 等基础服务
+- [基础服务](/docs/基础服务/) — Nginx、Apache、Tomcat、DNS、DHCP、FTP、SSH 等基础服务
 
 **💾 存储与数据**
 
@@ -40,7 +39,7 @@ body_class: td-home-terminal
 
 **🔐 安全与审计**
 
-- [安全与访问控制](/docs/安全与访问控制/) — VPN 安全接入、堡垒机权限控制与操作审计
+- [安全与访问控制](/docs/安全与访问控制/) — VPN、堡垒机、CA 证书与加密技术
 
 **🖥️ 基础设施**
 

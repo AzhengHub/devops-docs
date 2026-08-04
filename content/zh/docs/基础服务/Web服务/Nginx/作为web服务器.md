@@ -2882,7 +2882,7 @@ Context:	http, server, location, if
 
 - https://help.aliyun.com/document_detail/31870.html?spm=5176.8466032.0.0.6a9d1450TWx022
 
-![nginx跨域](/docs/http/nginx/nginx跨域.png)
+![nginx跨域](/docs/基础服务/web服务/nginx/nginx跨域.png)
 
 - **首先 跨域是浏览器同源策略实现的一种安全机制**
 
@@ -2890,7 +2890,7 @@ Context:	http, server, location, if
 
 - 跨域就是在原站点中加载了域名 协议 或端口不同的其他站点下的资源，这样浏览器的**同源策略**会阻止一个域的 javascript 脚本和另外一个域的内容进行交互。进而浏览器会提示报错进而无法正常展示页面
 
-![跨域报错示例图](/docs/http/nginx/跨域报错示例图.png)
+![跨域报错示例图](/docs/基础服务/web服务/nginx/跨域报错示例图.png)
 
 - 报错说明：要在“https:html”处执行XMLHttpRequest吗？来自源“http://localhost:63342”的1已被CORS策略阻止：请求的资源上不存在“访问控制允许源”标头。
 
@@ -3089,11 +3089,11 @@ http {
 
 - http://test1.xiangzheng.com/，因为目标站点未存在跨域相关的响应报文首部字段，所以报错 CORS
 
-![未作跨域设置前1](/docs/http/nginx/未作跨域设置前1.jpg)
+![未作跨域设置前1](/docs/基础服务/web服务/nginx/未作跨域设置前1.jpg)
 
 - http://test2.xiangzheng.com/，未存在跨域相关的响应报文首部字段
 
-![未作跨域设置前2](/docs/http/nginx/未作跨域设置前2.jpg)
+![未作跨域设置前2](/docs/基础服务/web服务/nginx/未作跨域设置前2.jpg)
 
 #### 实现跨域后测试
 
@@ -3139,11 +3139,11 @@ http {
 
 - 无报错
 
-![跨域设置后1](/docs/http/nginx/跨域设置后1.jpg)
+![跨域设置后1](/docs/基础服务/web服务/nginx/跨域设置后1.jpg)
 
 - 出现了新的响应头
 
-![跨域设置后2](/docs/http/nginx/跨域设置后2.jpg)
+![跨域设置后2](/docs/基础服务/web服务/nginx/跨域设置后2.jpg)
 
 
 
