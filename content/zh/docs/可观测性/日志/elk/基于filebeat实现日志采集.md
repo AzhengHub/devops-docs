@@ -471,7 +471,7 @@ output {
 
 # Filebeat+nginx --> Elasticsearch --> kibana 实现日志采集
 
-![filebeat-1](/docs/日志采集/elk/filebeat-1.jpg)
+![filebeat-1](/docs/可观测性/日志/elk/filebeat-1.jpg)
 
 ## Filebeat 配置
 
@@ -503,7 +503,7 @@ output {
 
 # Filebeat+nginx --> Logstash --> Elasticsearch --> kibana 实现日志采集
 
-![filebeat-2](/docs/日志采集/elk/filebeat-2.jpg)
+![filebeat-2](/docs/可观测性/日志/elk/filebeat-2.jpg)
 
 ## filebeat 配置
 
@@ -630,7 +630,7 @@ output {
 
 # Filebeat+nginx --> Redis --> Logstash --> Elasticsearch --> kibana 实现日志采集
 
-![filebeat-3](/docs/日志采集/elk/filebeat-3.jpg)
+![filebeat-3](/docs/可观测性/日志/elk/filebeat-3.jpg)
 
 ## filebeat 配置
 
@@ -858,7 +858,7 @@ OK
 
 # Filebeat+nginx --> Logstash --> Redis --> Logstash --> Elasticsearch --> kibana 实现日志采集
 
-![filebeat-4](/docs/日志采集/elk/filebeat-4.jpg)
+![filebeat-4](/docs/可观测性/日志/elk/filebeat-4.jpg)
 
 ## filebeat配置
 

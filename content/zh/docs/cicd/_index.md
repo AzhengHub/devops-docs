@@ -1,5 +1,5 @@
 ---
-title: "CI / CD"
+title: "CICD"
 weight: 20
 ---
 

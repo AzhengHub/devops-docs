@@ -17,15 +17,14 @@ body_class: td-home-terminal
 - [Kubernetes](/docs/kubernetes/) — K8s 集群管理、Pod、Service、Ingress、RBAC、CRD 等核心组件与实践
 - [容器](/docs/容器/) — Docker、Containerd、Cgroup 等容器技术
 
-**🔄 CI/CD 与自动化**
+**🔄 CICD 与自动化**
 
-- [CI/CD](/docs/cicd/) — Jenkins、GitLab CI、SonarQube、Git 等持续集成与持续部署
+- [CICD](/docs/cicd/) — Jenkins、GitLab CI、SonarQube、Git 等持续集成与持续部署
 - [GitOps](/docs/gitops/) — GitOps 实践与工具
 
 **📊 监控与可观测性**
 
-- [监控与告警](/docs/监控与告警/) — Prometheus、Grafana、Zabbix、Alertmanager 等监控解决方案
-- [日志采集](/docs/日志采集/) — Vector、Loki、ELK Stack、Fluentd、Filebeat 等日志收集与分析
+- [可观测性](/docs/可观测性/) — Prometheus、Grafana、Zabbix、Loki、ELK、Vector 等监控、告警与日志解决方案
 
 **🌐 网络与服务**
 

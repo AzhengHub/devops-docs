@@ -4,7 +4,7 @@ title: "通过nginx实现安全访问和高可用"
 
 # 前言
 
-<img src="/docs/日志采集/elk/es企业架构.jpg" alt="es企业架构" style="zoom: 50%;" />
+<img src="/docs/可观测性/日志/elk/es企业架构.jpg" alt="es企业架构" style="zoom: 50%;" />
 
 - 在生产中，通常不是直接访问Kibana，而是通过nginx或haproxy等反向代理应用来进行访问
 - Kibana为了容错，通常在每台Elasticsearch安装一个，这样即使一台Kibana出现问题，nginx或haproxy就会发现，进而将请求调度到其他的Kibana主机上
