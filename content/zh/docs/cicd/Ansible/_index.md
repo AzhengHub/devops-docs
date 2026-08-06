@@ -1,5 +1,6 @@
 ---
 title: "Ansible"
+weight: 50
 ---
 
 ## Ansible 概述

@@ -20,6 +20,8 @@ DevOps 四大平台：代码托管(gitlab/svn)、项目管理(jira)、运维平�
 
 (Jenkins/gitlab)
 
+除了持续集成与持续交付，本章也收录 Ansible 等自动化工具，用于流水线中的配置管理、批量执行和应用部署。
+
 
 
 
